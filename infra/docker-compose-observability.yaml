@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - observashop-network
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./observability/grafana:/etc/grafana
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - observashop-network
+  loki:
+    image: grafana/loki:latest
+    volumes:
+      - ./observability/loki/loki-config.yaml:/etc/loki/loki-config.yaml
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - observashop-network
+  tempo:
+    image: grafana/tempo:latest
+    volumes:
+      - ./observability/tempo/tempo.yaml:/etc/tempo/tempo.yaml
+      - tempo-data:/tempo
+    ports:
+      - "3200:3200"
+    networks:
+      - observashop-network
+volumes:
+  prometheus-data:
+  grafana-data:
+  loki-data:
+  tempo-data:
+networks:
+  observashop-network:
+    driver: bridge

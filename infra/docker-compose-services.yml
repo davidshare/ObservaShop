@@ -1,0 +1,115 @@
+version: "3.8"
+services:
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: ../../infra/docker/auth-service.Dockerfile
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - JWT_SECRET=${JWT_SECRET}
+      - POSTGRES_HOST=postgres-auth
+      - POSTGRES_USER=${POSTGRES_AUTH_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_AUTH_PASSWORD}
+      - POSTGRES_DB=auth_db
+    ports:
+      - "8010:8000"
+    networks:
+      - observashop-network
+  authz-service:
+    build:
+      context: ./services/authz-service
+      dockerfile: ../../infra/docker/authz-service.Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-authz
+      - POSTGRES_USER=${POSTGRES_AUTHZ_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_AUTHZ_PASSWORD}
+      - POSTGRES_DB=authz_db
+    ports:
+      - "8011:8000"
+    networks:
+      - observashop-network
+  product-service:
+    build:
+      context: ./services/product-service
+      dockerfile: ../../infra/docker/product-service.Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-product
+      - POSTGRES_USER=${POSTGRES_PRODUCT_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PRODUCT_PASSWORD}
+      - POSTGRES_DB=product_db
+      - REDIS_HOST=${REDIS_HOST}
+    ports:
+      - "8002:8000"
+    networks:
+      - observashop-network
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: ../../infra/docker/order-service.Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-order
+      - POSTGRES_USER=${POSTGRES_ORDER_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_ORDER_PASSWORD}
+      - POSTGRES_DB=order_db
+    ports:
+      - "8003:8000"
+    networks:
+      - observashop-network
+  payment-service:
+    build:
+      context: ./services/payment-service
+      dockerfile: ../../infra/docker/payment-service.Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-payment
+      - POSTGRES_USER=${POSTGRES_PAYMENT_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PAYMENT_PASSWORD}
+      - POSTGRES_DB=payment_db
+    ports:
+      - "8004:8000"
+    networks:
+      - observashop-network
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: ../../infra/docker/notification-service.Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-notification
+      - POSTGRES_USER=${POSTGRES_NOTIFICATION_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_NOTIFICATION_PASSWORD}
+      - POSTGRES_DB=notification_db
+    ports:
+      - "8005:8000"
+    networks:
+      - observashop-network
+  media-service:
+    build:
+      context: ./services/media-service
+      dockerfile: ../../infra/docker/media-service.Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-media
+      - POSTGRES_USER=${POSTGRES_MEDIA_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_MEDIA_PASSWORD}
+      - POSTGRES_DB=media_db
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    ports:
+      - "8006:8000"
+    networks:
+      - observashop-network
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: ../../infra/docker/analytics-service.Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-analytics
+      - POSTGRES_USER=${POSTGRES_ANALYTICS_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_ANALYTICS_PASSWORD}
+      - POSTGRES_DB=analytics_db
+    ports:
+      - "8007:8000"
+    networks:
+      - observashop-network
+networks:
+  observashop-network:
+    driver: bridge
