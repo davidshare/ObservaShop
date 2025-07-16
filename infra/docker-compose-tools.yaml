@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   kong:
     image: kong:latest
@@ -6,6 +5,7 @@ services:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/kong/kong.yml
       - KONG_JWT_SECRET=${KONG_JWT_SECRET}
+    env_file: .env
     volumes:
       - ./gateway/kong/kong.yml:/kong/kong.yml
       - ./gateway/kong/plugins:/kong/plugins
@@ -14,6 +14,7 @@ services:
       - "8001:8001"
     networks:
       - observashop-network
+
   redis:
     image: redis:latest
     ports:
@@ -27,6 +28,7 @@ services:
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    env_file: .env
     command: server /data
     ports:
       - "9000:9000"
@@ -42,6 +44,7 @@ services:
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    env_file: .env
     depends_on:
       - zookeeper
     volumes:
@@ -53,6 +56,7 @@ services:
     environment:
       - ZOOKEEPER_CLIENT_PORT=2181
       - ZOOKEEPER_TICK_TIME=2000
+    env_file: .env
     volumes:
       - zookeeper-data:/var/lib/zookeeper/data
     networks:
@@ -62,10 +66,14 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_AUTH_USER}
       - POSTGRES_PASSWORD=${POSTGRES_AUTH_PASSWORD}
-      - POSTGRES_DB=auth_db
+      - POSTGRES_DB=auth
+    env_file: .env
     volumes:
-      - ./databases/auth/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-auth-data:/var/lib/postgresql/data
+      # - ./infra/databases/auth/initdb:/docker-entrypoint-initdb.d
+      - ./databases/auth/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+    ports:
+      - "5433:5432"
     networks:
       - observashop-network
   postgres-authz:
@@ -74,9 +82,11 @@ services:
       - POSTGRES_USER=${POSTGRES_AUTHZ_USER}
       - POSTGRES_PASSWORD=${POSTGRES_AUTHZ_PASSWORD}
       - POSTGRES_DB=authz_db
+    env_file: .env
     volumes:
-      - ./databases/authz/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-authz-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
     networks:
       - observashop-network
   postgres-product:
@@ -85,9 +95,11 @@ services:
       - POSTGRES_USER=${POSTGRES_PRODUCT_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PRODUCT_PASSWORD}
       - POSTGRES_DB=product_db
+    env_file: .env
     volumes:
-      - ./databases/product/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-product-data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
     networks:
       - observashop-network
   postgres-order:
@@ -96,9 +108,11 @@ services:
       - POSTGRES_USER=${POSTGRES_ORDER_USER}
       - POSTGRES_PASSWORD=${POSTGRES_ORDER_PASSWORD}
       - POSTGRES_DB=order_db
+    env_file: .env
     volumes:
-      - ./databases/order/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-order-data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
     networks:
       - observashop-network
   postgres-payment:
@@ -107,9 +121,11 @@ services:
       - POSTGRES_USER=${POSTGRES_PAYMENT_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PAYMENT_PASSWORD}
       - POSTGRES_DB=payment_db
+    env_file: .env
     volumes:
-      - ./databases/payment/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-payment-data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
     networks:
       - observashop-network
   postgres-notification:
@@ -118,9 +134,11 @@ services:
       - POSTGRES_USER=${POSTGRES_NOTIFICATION_USER}
       - POSTGRES_PASSWORD=${POSTGRES_NOTIFICATION_PASSWORD}
       - POSTGRES_DB=notification_db
+    env_file: .env
     volumes:
-      - ./databases/notification/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-notification-data:/var/lib/postgresql/data
+    ports:
+      - "5438:5432"
     networks:
       - observashop-network
   postgres-media:
@@ -129,9 +147,11 @@ services:
       - POSTGRES_USER=${POSTGRES_MEDIA_USER}
       - POSTGRES_PASSWORD=${POSTGRES_MEDIA_PASSWORD}
       - POSTGRES_DB=media_db
+    env_file: .env
     volumes:
-      - ./databases/media/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-media-data:/var/lib/postgresql/data
+    ports:
+      - "5439:5432"
     networks:
       - observashop-network
   postgres-analytics:
@@ -140,9 +160,11 @@ services:
       - POSTGRES_USER=${POSTGRES_ANALYTICS_USER}
       - POSTGRES_PASSWORD=${POSTGRES_ANALYTICS_PASSWORD}
       - POSTGRES_DB=analytics_db
+    env_file: .env
     volumes:
-      - ./databases/analytics/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-analytics-data:/var/lib/postgresql/data
+    ports:
+      - "5430:5432"
     networks:
       - observashop-network
 volumes:

@@ -4,7 +4,14 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "alembic>=1.16.2",
+    "fastapi>=0.115.13",
+    "psycopg2-binary>=2.9.10",
+    "sqlalchemy>=2.0.41",
+    "sqlmodel>=0.0.24",
+    "uvicorn>=0.34.3",
+]
 
 [tool.uv.workspace]
 members = [
