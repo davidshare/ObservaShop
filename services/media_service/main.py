@@ -1,5 +1,5 @@
 def main():
-    print("Hello from media-service!")
+    print("Hello from mediaservice!")
 
 
 if __name__ == "__main__":

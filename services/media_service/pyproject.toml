@@ -1,5 +1,5 @@
 [project]
-name = "media-service"
+name = "media_service"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
