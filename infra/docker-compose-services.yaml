@@ -1,4 +1,18 @@
 services:
+  analytics-service:
+    build:
+      context: ../
+      dockerfile: infra/docker/analytics-service.Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres-analytics
+      - POSTGRES_USER=${POSTGRES_ANALYTICS_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_ANALYTICS_PASSWORD}
+      - POSTGRES_DB=analytics
+    env_file: .env
+    ports:
+      - "8007:8000"
+    networks:
+      - observashop-network
   auth-service:
     build:
       context: ../
@@ -101,20 +115,6 @@ services:
     env_file: .env
     ports:
       - "8006:8000"
-    networks:
-      - observashop-network
-  analytics-service:
-    build:
-      context: ../
-      dockerfile: infra/docker/analytics-service.Dockerfile
-    environment:
-      - POSTGRES_HOST=postgres-analytics
-      - POSTGRES_USER=${POSTGRES_ANALYTICS_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_ANALYTICS_PASSWORD}
-      - POSTGRES_DB=analytics
-    env_file: .env
-    ports:
-      - "8007:8000"
     networks:
       - observashop-network
 networks:
