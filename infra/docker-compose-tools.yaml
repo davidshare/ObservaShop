@@ -108,7 +108,7 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_ORDER_USER}
       - POSTGRES_PASSWORD=${POSTGRES_ORDER_PASSWORD}
-      - POSTGRES_DB=order
+      - POSTGRES_DB=orders
     env_file: .env
     volumes:
       - postgres-order-data:/var/lib/postgresql/data
