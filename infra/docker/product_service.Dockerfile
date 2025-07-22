@@ -7,7 +7,7 @@ RUN pip install uv
 
 # Copy shared and service code
 COPY shared /app/shared
-COPY services/product-service /app
+COPY services/product_service /app
 
 # Install dependencies with uv
 RUN uv sync
