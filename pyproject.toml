@@ -17,7 +17,7 @@ dependencies = [
 members = [
     "services/analytics-service",
     "services/auth-service",
-    "services/authz-service",
+    "services/authz_service",
     "services/media-service",
     "services/notification-service",
     "services/order-service",
