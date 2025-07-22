@@ -94,10 +94,11 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_PRODUCT_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PRODUCT_PASSWORD}
-      - POSTGRES_DB=product_db
+      - POSTGRES_DB=product
     env_file: .env
     volumes:
       - postgres-product-data:/var/lib/postgresql/data
+      - ./databases/product/init.sql:/docker-entrypoint-initdb.d/10-init.sql
     ports:
       - "5435:5432"
     networks:
@@ -107,10 +108,11 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_ORDER_USER}
       - POSTGRES_PASSWORD=${POSTGRES_ORDER_PASSWORD}
-      - POSTGRES_DB=order_db
+      - POSTGRES_DB=order
     env_file: .env
     volumes:
       - postgres-order-data:/var/lib/postgresql/data
+      - ./databases/order/init.sql:/docker-entrypoint-initdb.d/10-init.sql
     ports:
       - "5436:5432"
     networks:
@@ -120,10 +122,11 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_PAYMENT_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PAYMENT_PASSWORD}
-      - POSTGRES_DB=payment_db
+      - POSTGRES_DB=payment
     env_file: .env
     volumes:
       - postgres-payment-data:/var/lib/postgresql/data
+      - ./databases/payment/init.sql:/docker-entrypoint-initdb.d/10-init.sql
     ports:
       - "5437:5432"
     networks:
@@ -133,10 +136,11 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_NOTIFICATION_USER}
       - POSTGRES_PASSWORD=${POSTGRES_NOTIFICATION_PASSWORD}
-      - POSTGRES_DB=notification_db
+      - POSTGRES_DB=notification
     env_file: .env
     volumes:
       - postgres-notification-data:/var/lib/postgresql/data
+      - ./databases/notification/init.sql:/docker-entrypoint-initdb.d/10-init.sql
     ports:
       - "5438:5432"
     networks:
@@ -146,10 +150,11 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_MEDIA_USER}
       - POSTGRES_PASSWORD=${POSTGRES_MEDIA_PASSWORD}
-      - POSTGRES_DB=media_db
+      - POSTGRES_DB=media
     env_file: .env
     volumes:
       - postgres-media-data:/var/lib/postgresql/data
+      - ./databases/media/init.sql:/docker-entrypoint-initdb.d/10-init.sql
     ports:
       - "5439:5432"
     networks:
@@ -159,10 +164,11 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_ANALYTICS_USER}
       - POSTGRES_PASSWORD=${POSTGRES_ANALYTICS_PASSWORD}
-      - POSTGRES_DB=analytics_db
+      - POSTGRES_DB=analytics
     env_file: .env
     volumes:
       - postgres-analytics-data:/var/lib/postgresql/data
+      - ./databases/analytics/init.sql:/docker-entrypoint-initdb.d/10-init.sql
     ports:
       - "5430:5432"
     networks:
