@@ -2,7 +2,7 @@ services:
   analytics-service:
     build:
       context: ../
-      dockerfile: infra/docker/analytics-service.Dockerfile
+      dockerfile: infra/docker/analytics_service.Dockerfile
     environment:
       - POSTGRES_HOST=postgres-analytics
       - POSTGRES_USER=${POSTGRES_ANALYTICS_USER}
@@ -16,7 +16,7 @@ services:
   auth-service:
     build:
       context: ../
-      dockerfile: infra/docker/auth-service.Dockerfile
+      dockerfile: infra/docker/auth_service.Dockerfile
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - JWT_SECRET=${JWT_SECRET}
@@ -32,7 +32,7 @@ services:
   authz-service:
     build:
       context: ../
-      dockerfile: infra/docker/authz-service.Dockerfile
+      dockerfile: infra/docker/authz_service.Dockerfile
     environment:
       - POSTGRES_HOST=postgres-authz
       - POSTGRES_USER=${POSTGRES_AUTHZ_USER}
@@ -46,7 +46,7 @@ services:
   product-service:
     build:
       context: ../
-      dockerfile: infra/docker/product-service.Dockerfile
+      dockerfile: infra/docker/product_service.Dockerfile
     environment:
       - POSTGRES_HOST=postgres-product
       - POSTGRES_USER=${POSTGRES_PRODUCT_USER}
@@ -61,7 +61,7 @@ services:
   order-service:
     build:
       context: ../
-      dockerfile: infra/docker/order-service.Dockerfile
+      dockerfile: infra/docker/order_service.Dockerfile
     environment:
       - POSTGRES_HOST=postgres-order
       - POSTGRES_USER=${POSTGRES_ORDER_USER}
@@ -75,7 +75,7 @@ services:
   payment-service:
     build:
       context: ../
-      dockerfile: infra/docker/payment-service.Dockerfile
+      dockerfile: infra/docker/payment_service.Dockerfile
     environment:
       - POSTGRES_HOST=postgres-payment
       - POSTGRES_USER=${POSTGRES_PAYMENT_USER}
@@ -89,7 +89,7 @@ services:
   notification-service:
     build:
       context: ../
-      dockerfile: infra/docker/notification-service.Dockerfile
+      dockerfile: infra/docker/notification_service.Dockerfile
     environment:
       - POSTGRES_HOST=postgres-notification
       - POSTGRES_USER=${POSTGRES_NOTIFICATION_USER}
