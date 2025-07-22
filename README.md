@@ -8,240 +8,297 @@ A simple monorepo microservice
 - https://dev.to/vortico/native-domain-driven-design-with-flama-l9o
 
 ```
-observashop/
-├── .github/                          # GitHub Actions for CI/CD
-│   └── workflows/
-│       ├── ci.yml
-│       ├── cd.yml
-│       └── chaos.yml
-├── docs/                             # Documentation
-│   ├── architecture/
-│   │   ├── sad.md
-│   │   └── diagrams/
-│   ├── design/
-│   │   ├── sdd.md
-│   │   └── prd.md
-│   ├── api/
-│   │   └── endpoints.md
-│   └── setup.md
-├── infra/                            # Infrastructure configurations
-│   ├── docker/                   # Dockerfiles for services
-│   │   ├── auth-service.Dockerfile
-│   │   ├── authz-service.Dockerfile
-│   │   ├── product-service.Dockerfile
-│   │   ├── order-service.Dockerfile
-│   │   ├── payment-service.Dockerfile
-│   │   ├── notification-service.Dockerfile
-│   │   ├── media-service.Dockerfile
-│   │   ├── analytics-service.Dockerfile
-│   │   └── kong.Dockerfile
-│   ├── docker-compose-tools.yml  # Tools (Kong, Redis, MinIO, Kafka, DBs, observability)
-│   ├── docker-compose-services.yml # Microservices
-│   ├── gateway/                  # Kong gateway configurations
-│   │   ├── kong/
-│   │   │   ├── kong.yml
-│   │   │   ├── plugins/
-│   │   │   │   ├── jwt.lua
-│   │   │   │   ├── rbac.lua
-│   │   │   │   └── prometheus.lua
-│   │   │   └── kong.conf
-│   ├── kubernetes/               # Optional Kubernetes manifests
-│   │   ├── deployments/
-│   │   ├── services/
-│   │   └── helm/
-│   ├── minio/                    # MinIO configuration
-│   │   ├── minio-config.yaml
-│   │   └── bucket-policies.json
-│   ├── databases/                # Per-service database configurations
-│   │   ├── auth/                 # SQLite or PostgreSQL config
-│   │   │   └── init.sql         # Initial schema (if SQLite)
-│   │   ├── authz/                # PostgreSQL config
-│   │   │   └── init.sql         # Initial schema
-│   │   ├── product/              # PostgreSQL config
-│   │   │   └── init.sql
-│   │   ├── order/                # PostgreSQL config
-│   │   │   └── init.sql
-│   │   ├── payment/              # PostgreSQL config
-│   │   │   └── init.sql
-│   │   ├── notification/         # PostgreSQL config (if used)
-│   │   │   └── init.sql
-│   │   ├── media/                # PostgreSQL config
-│   │   │   └── init.sql
-│   │   └── analytics/            # PostgreSQL config
-│   │       └── init.sql
-│   └── observability/            # Observability stack configs
-│       ├── prometheus/
-│       │   ├── prometheus.yml
-│       │   └── alerting-rules.yml
-│       ├── grafana/
-│       │   ├── dashboards/
-│       │   │   ├── auth.json
-│       │   │   ├── kong.json
-│       │   │   └── overview.json
-│       │   └── grafana.ini
-│       ├── loki/
-│       │   ├── loki-config.yaml
-│       │   └── retention.yaml
-│       ├── tempo/
-│       │   ├── tempo.yaml
-│       │   └── tracing-rules.yaml
-│       └── alertmanager/
-│           ├── alertmanager.yml
-│           └── templates/
-├── scripts/                          # Utility scripts
-│   ├── setup-local.sh            # Sets up tools and services
-│   ├── chaos-experiments.sh
-│   ├── load-test.sh
-│   ├── generate-docs.sh
-│   └── cleanup-redis.sh
-├── services/                         # Microservices
-│   ├── auth-service/
-│   │   ├── src/
-│   │   │   ├── domain/
-│   │   │   ├── application/
-│   │   │   ├── infrastructure/
-│   │   │   │   ├── repositories/
-│   │   │   │   ├── jwt/
-│   │   │   │   ├── redis/
-│   │   │   │   └── database/     # Migrations for SQLite/PostgreSQL
-│   │   │   ├── interfaces/
-│   │   │   │   ├── http/
-│   │   │   │   └── cli/
-│   │   │   ├── events/
-│   │   │   └── config/
-│   │   ├── tests/
-│   │   ├── pyproject.toml
-│   │   └── README.md
-│   ├── authz-service/
-│   │   ├── src/
-│   │   │   ├── domain/
-│   │   │   ├── application/
-│   │   │   ├── infrastructure/
-│   │   │   │   └── database/     # PostgreSQL migrations
-│   │   │   ├── interfaces/
-│   │   │   ├── events/
-│   │   │   └── config/
-│   │   ├── tests/
-│   │   ├── pyproject.toml
-│   │   └── README.md
-│   ├── product-service/
-│   │   ├── src/
-│   │   │   ├── domain/
-│   │   │   ├── application/
-│   │   │   ├── infrastructure/
-│   │   │   │   └── database/     # PostgreSQL migrations
-│   │   │   ├── interfaces/
-│   │   │   ├── events/
-│   │   │   └── config/
-│   │   ├── tests/
-│   │   ├── pyproject.toml
-│   │   └── README.md
-│   ├── order-service/
-│   │   ├── src/
-│   │   │   ├── domain/
-│   │   │   ├── application/
-│   │   │   ├── infrastructure/
-│   │   │   │   └── database/     # PostgreSQL migrations
-│   │   │   ├── interfaces/
-│   │   │   ├── events/
-│   │   │   └── config/
-│   │   ├── tests/
-│   │   ├── pyproject.toml
-│   │   └── README.md
-│   ├── payment-service/
-│   │   ├── src/
-│   │   │   ├── domain/
-│   │   │   ├── application/
-│   │   │   ├── infrastructure/
-│   │   │   │   └── database/     # PostgreSQL migrations
-│   │   │   ├── interfaces/
-│   │   │   ├── events/
-│   │   │   └── config/
-│   │   ├── tests/
-│   │   ├── pyproject.toml
-│   │   └── README.md
-│   ├── notification-service/
-│   │   ├── src/
-│   │   │   ├── domain/
-│   │   │   ├── application/
-│   │   │   ├── infrastructure/
-│   │   │   │   └── database/     # PostgreSQL migrations (if used)
-│   │   │   ├── interfaces/
-│   │   │   ├── events/
-│   │   │   └── config/
-│   │   ├── tests/
-│   │   ├── pyproject.toml
-│   │   └── README.md
-│   ├── media-service/
-│   │   ├── src/
-│   │   │   ├── domain/
-│   │   │   ├── application/
-│   │   │   ├── infrastructure/
-│   │   │   │   └── database/     # PostgreSQL migrations
-│   │   │   ├── interfaces/
-│   │   │   ├── events/
-│   │   │   └── config/
-│   │   ├── tests/
-│   │   ├── pyproject.toml
-│   │   └── README.md
-│   ├── analytics-service/
-│   │   ├── src/
-│   │   │   ├── domain/
-│   │   │   ├── application/
-│   │   │   ├── infrastructure/
-│   │   │   │   └── database/     # PostgreSQL migrations
-│   │   │   ├── interfaces/
-│   │   │   ├── events/
-│   │   │   └── config/
-│   │   ├── tests/
-│   │   ├── pyproject.toml
-│   │   └── README.md
-├── shared/                           # Shared libraries and configs
-│   ├── libs/
-│   │   ├── auth/
-│   │   │   ├── jwt_utils.py
-│   │   │   ├── refresh_token_utils.py
-│   │   │   └── authz_client.py
-│   │   ├── observability/
-│   │   │   ├── logging.py
-│   │   │   ├── metrics.py
-│   │   │   └── tracing.py
-│   │   ├── kafka/
-│   │   │   ├── producer.py
-│   │   │   └── consumer.py
-│   │   ├── rabbitmq/
-│   │   │   ├── producer.py
-│   │   │   └── consumer.py
-│   │   ├── redis/
-│   │   │   └── client.py
-│   │   └── minio/
-│   │       └── client.py
-│   ├── schemas/
-│   │   ├── auth.events.json
-│   │   ├── order.events.json
-│   │   ├── payment.events.json
-│   │   ├── product.events.json
-│   │   ├── media.events.json
-│   │   ├── notification.events.json
-│   │   ├── authz.events.json
-│   │   └── analytics.events.json
-│   └── config/
-│       ├── env.template
-│       └── logging.yaml
-├── tests/                            # Cross-service tests
-│   ├── integration/
-│   │   ├── test_auth.py
-│   │   ├── test_orders.py
-│   │   └── test_payments.py
-│   ├── load/
-│   │   ├── locustfile.py
-│   │   └── results/
-│   └── chaos/
-│       ├── latency.yaml
-│       ├── crash.yaml
-│       └── queue-overflow.yaml
-├── pyproject.toml                # Monorepo-wide Python dependencies
-├── README.md                     # Project overview
-├── LICENSE
-└── .gitignore
+.
+├── docs
+│   ├── api
+│   ├── architecture
+│   │   └── diagrams
+│   └── design
+├── infra
+│   ├── databases
+│   │   ├── analytics
+│   │   │   └── init.sql
+│   │   ├── auth
+│   │   │   └── init.sql
+│   │   ├── authz
+│   │   │   └── init.sql
+│   │   ├── media
+│   │   │   └── init.sql
+│   │   ├── notification
+│   │   │   └── init.sql
+│   │   ├── order
+│   │   │   └── init.sql
+│   │   ├── payment
+│   │   │   └── init.sql
+│   │   └── product
+│   │       └── init.sql
+│   ├── docker
+│   │   ├── analytics-service.Dockerfile
+│   │   ├── auth-service.Dockerfile
+│   │   ├── authz-service.Dockerfile
+│   │   ├── media-service.Dockerfile
+│   │   ├── notification-service.Dockerfile
+│   │   ├── order-service.Dockerfile
+│   │   ├── payment-service.Dockerfile
+│   │   └── product-service.Dockerfile
+│   ├── docker-compose-observability.yaml
+│   ├── docker-compose-services.yaml
+│   ├── docker-compose-tools.yaml
+│   ├── gateway
+│   │   └── kong
+│   │       ├── kong.conf
+│   │       ├── kong.yml
+│   │       └── plugins
+│   ├── infra
+│   │   └── databases
+│   │       └── auth
+│   │           ├── initdb
+│   │           └── init.sql
+│   ├── kubernetes
+│   │   ├── deployments
+│   │   ├── helm
+│   │   └── services
+│   ├── minio
+│   │   └── minio-config.yaml
+│   └── observability
+│       ├── alertmanager
+│       │   └── templates
+│       ├── grafana
+│       │   └── dashboards
+│       ├── loki
+│       ├── prometheus
+│       └── tempo
+├── __init__.py
+├── main.py
+├── pyproject.toml
+├── README.md
+├── scripts
+│   ├── chaos-experiments.sh
+│   ├── cleanup-redis.sh
+│   ├── generate-docs.sh
+│   ├── load-test.sh
+│   └── setup-local.sh
+├── services
+│   ├── analytics_service
+│   │   ├── alembic.ini
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── pyproject.toml
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── application
+│   │       ├── config
+│   │       │   ├── config.py
+│   │       │   ├── __init__.py
+│   │       │   └── __pycache__
+│   │       │       ├── config.cpython-312.pyc
+│   │       │       └── __init__.cpython-312.pyc
+│   │       ├── domain
+│   │       ├── events
+│   │       ├── infrastructure
+│   │       │   ├── database
+│   │       │   │   ├── alembic
+│   │       │   │   │   ├── env.py
+│   │       │   │   │   ├── __pycache__
+│   │       │   │   │   │   └── env.cpython-312.pyc
+│   │       │   │   │   ├── README
+│   │       │   │   │   ├── script.py.mako
+│   │       │   │   │   └── versions
+│   │       │   │   │       ├── d56359dea888_initial_schema.py
+│   │       │   │   │       └── __pycache__
+│   │       │   │   │           └── d56359dea888_initial_schema.cpython-312.pyc
+│   │       │   │   ├── models.py
+│   │       │   │   └── __pycache__
+│   │       │   │       └── models.cpython-312.pyc
+│   │       │   ├── jwt
+│   │       │   └── redis
+│   │       ├── __init__.py
+│   │       ├── interfaces
+│   │       │   └── http
+│   │       ├── main.py
+│   │       ├── __pycache__
+│   │       │   └── __init__.cpython-312.pyc
+│   │       └── start.py
+│   ├── auth_service
+│   │   ├── alembic.ini
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   └── __init__.cpython-312.pyc
+│   │   ├── pyproject.toml
+│   │   ├── README.md
+│   │   ├── src
+│   │   │   ├── application
+│   │   │   ├── config
+│   │   │   │   ├── config.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   │       ├── config.cpython-312.pyc
+│   │   │   │       └── __init__.cpython-312.pyc
+│   │   │   ├── domain
+│   │   │   ├── events
+│   │   │   ├── infrastructure
+│   │   │   │   ├── database
+│   │   │   │   │   ├── alembic
+│   │   │   │   │   │   ├── env.py
+│   │   │   │   │   │   ├── __pycache__
+│   │   │   │   │   │   │   └── env.cpython-312.pyc
+│   │   │   │   │   │   ├── README
+│   │   │   │   │   │   ├── script.py.mako
+│   │   │   │   │   │   └── versions
+│   │   │   │   │   │       ├── 78c59c87ff5a_initial_schema.py
+│   │   │   │   │   │       └── __pycache__
+│   │   │   │   │   │           └── 78c59c87ff5a_initial_schema.cpython-312.pyc
+│   │   │   │   │   ├── models.py
+│   │   │   │   │   └── __pycache__
+│   │   │   │   │       └── models.cpython-312.pyc
+│   │   │   │   ├── jwt
+│   │   │   │   └── redis
+│   │   │   ├── __init__.py
+│   │   │   ├── interfaces
+│   │   │   │   └── http
+│   │   │   ├── main.py
+│   │   │   ├── __pycache__
+│   │   │   │   └── __init__.cpython-312.pyc
+│   │   │   └── start.py
+│   │   └── uv.lock
+│   ├── authz_service
+│   │   ├── alembic.ini
+│   │   ├── __init__.py
+│   │   ├── pyproject.toml
+│   │   ├── README.md
+│   │   ├── src
+│   │   │   ├── application
+│   │   │   │   └── __init__.py
+│   │   │   ├── config
+│   │   │   │   ├── config.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── __pycache__
+│   │   │   │       ├── config.cpython-312.pyc
+│   │   │   │       └── __init__.cpython-312.pyc
+│   │   │   ├── domain
+│   │   │   │   └── __init__.py
+│   │   │   ├── events
+│   │   │   │   └── __init__.py
+│   │   │   ├── infrastructure
+│   │   │   │   ├── database
+│   │   │   │   │   ├── alembic
+│   │   │   │   │   │   ├── env.py
+│   │   │   │   │   │   ├── __pycache__
+│   │   │   │   │   │   │   └── env.cpython-312.pyc
+│   │   │   │   │   │   ├── README
+│   │   │   │   │   │   ├── script.py.mako
+│   │   │   │   │   │   └── versions
+│   │   │   │   │   │       ├── bba9ba30bb21_initial_schema.py
+│   │   │   │   │   │       └── __pycache__
+│   │   │   │   │   │           └── bba9ba30bb21_initial_schema.cpython-312.pyc
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── models.py
+│   │   │   │   │   └── __pycache__
+│   │   │   │   │       ├── __init__.cpython-312.pyc
+│   │   │   │   │       └── models.cpython-312.pyc
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── jwt
+│   │   │   │   ├── __pycache__
+│   │   │   │   │   └── __init__.cpython-312.pyc
+│   │   │   │   └── redis
+│   │   │   ├── interfaces
+│   │   │   │   └── http
+│   │   │   ├── main.py
+│   │   │   └── start.py
+│   │   └── uv.lock
+│   ├── __init__.py
+│   ├── media_service
+│   │   ├── main.py
+│   │   ├── pyproject.toml
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── application
+│   │       ├── config
+│   │       ├── domain
+│   │       ├── events
+│   │       ├── infrastructure
+│   │       │   ├── database
+│   │       │   ├── jwt
+│   │       │   └── redis
+│   │       └── interfaces
+│   │           └── http
+│   ├── notification-service
+│   │   ├── main.py
+│   │   ├── pyproject.toml
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── application
+│   │       ├── config
+│   │       ├── domain
+│   │       ├── events
+│   │       ├── infrastructure
+│   │       │   ├── database
+│   │       │   ├── jwt
+│   │       │   └── redis
+│   │       └── interfaces
+│   │           └── http
+│   ├── order-service
+│   │   ├── main.py
+│   │   ├── pyproject.toml
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── application
+│   │       ├── config
+│   │       ├── domain
+│   │       ├── events
+│   │       ├── infrastructure
+│   │       │   ├── database
+│   │       │   ├── jwt
+│   │       │   └── redis
+│   │       └── interfaces
+│   │           └── http
+│   ├── payment-service
+│   │   ├── main.py
+│   │   ├── pyproject.toml
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── application
+│   │       ├── config
+│   │       ├── domain
+│   │       ├── events
+│   │       ├── infrastructure
+│   │       │   ├── database
+│   │       │   ├── jwt
+│   │       │   └── redis
+│   │       └── interfaces
+│   │           └── http
+│   ├── product-service
+│   │   ├── main.py
+│   │   ├── pyproject.toml
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── application
+│   │       ├── config
+│   │       ├── domain
+│   │       ├── events
+│   │       ├── infrastructure
+│   │       │   ├── database
+│   │       │   ├── jwt
+│   │       │   └── redis
+│   │       └── interfaces
+│   │           └── http
+│   └── __pycache__
+│       └── __init__.cpython-312.pyc
+├── shared
+│   ├── config
+│   │   ├── env.template
+│   │   └── logging.yaml
+│   ├── libs
+│   │   ├── auth
+│   │   ├── kafka
+│   │   ├── minio
+│   │   ├── observability
+│   │   ├── rabbitmq
+│   │   └── redis
+│   └── schemas
+├── tests
+│   ├── chaos
+│   ├── integration
+│   └── load
+└── uv.lock
 ```

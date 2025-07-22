@@ -4,14 +4,14 @@ requires-python = ">=3.12"
 
 [manifest]
 members = [
-    "analytics-service",
-    "authz-service",
-    "media-service",
-    "notification-service",
+    "analytics_service",
+    "authz_service",
+    "media_service",
+    "notification_service",
     "observashop",
-    "order-service",
-    "payment-service",
-    "product-service",
+    "order_service",
+    "payment_service",
+    "product_service",
 ]
 
 [[package]]
@@ -29,9 +29,9 @@ wheels = [
 ]
 
 [[package]]
-name = "analytics-service"
+name = "analytics_service"
 version = "0.1.0"
-source = { virtual = "services/analytics-service" }
+source = { virtual = "services/analytics_service" }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
@@ -79,7 +79,7 @@ wheels = [
 ]
 
 [[package]]
-name = "authz-service"
+name = "authz_service"
 version = "0.1.0"
 source = { virtual = "services/authz_service" }
 dependencies = [
@@ -242,9 +242,9 @@ wheels = [
 ]
 
 [[package]]
-name = "media-service"
+name = "media_service"
 version = "0.1.0"
-source = { virtual = "services/media-service" }
+source = { virtual = "services/media_service" }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
@@ -265,9 +265,9 @@ requires-dist = [
 ]
 
 [[package]]
-name = "notification-service"
+name = "notification_service"
 version = "0.1.0"
-source = { virtual = "services/notification-service" }
+source = { virtual = "services/notification_service" }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
@@ -311,9 +311,9 @@ requires-dist = [
 ]
 
 [[package]]
-name = "order-service"
+name = "order_service"
 version = "0.1.0"
-source = { virtual = "services/order-service" }
+source = { virtual = "services/order_service" }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
@@ -334,9 +334,9 @@ requires-dist = [
 ]
 
 [[package]]
-name = "payment-service"
+name = "payment_service"
 version = "0.1.0"
-source = { virtual = "services/payment-service" }
+source = { virtual = "services/payment_service" }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
@@ -357,9 +357,9 @@ requires-dist = [
 ]
 
 [[package]]
-name = "product-service"
+name = "product_service"
 version = "0.1.0"
-source = { virtual = "services/product-service" }
+source = { virtual = "services/product_service" }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },

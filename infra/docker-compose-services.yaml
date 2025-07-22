@@ -103,7 +103,7 @@ services:
   media-service:
     build:
       context: ../
-      dockerfile: infra/docker/media-service.Dockerfile
+      dockerfile: infra/docker/media_service.Dockerfile
     environment:
       - POSTGRES_HOST=postgres-media
       - POSTGRES_USER=${POSTGRES_MEDIA_USER}

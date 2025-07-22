@@ -15,12 +15,12 @@ dependencies = [
 
 [tool.uv.workspace]
 members = [
-    "services/analytics-service",
-    "services/auth-service",
+    "services/analytics_service",
+    "services/auth_service",
     "services/authz_service",
-    "services/media-service",
-    "services/notification-service",
-    "services/order-service",
-    "services/payment-service",
-    "services/product-service",
+    "services/media_service",
+    "services/notification_service",
+    "services/order_service",
+    "services/payment_service",
+    "services/product_service",
 ]
