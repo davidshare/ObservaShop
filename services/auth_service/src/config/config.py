@@ -3,15 +3,25 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Config(BaseSettings):
-    REDIS_HOST: str
-    REDIS_PORT: str
+
+    # JWT
     JWT_SECRET: str
     JWT_AUDIENCE: str
     JWT_ISSUER: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # Postgres
     POSTGRES_HOST: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
+
+    # Redis
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_DB: int
+    REDIS_TTL: int = 604800
 
     @property
     def DATABASE_URL(self) -> str:

@@ -1,6 +1,3 @@
-# src/core/exceptions.py
-
-
 class AuthServiceError(Exception):
     """Base exception for all authentication service errors."""
 
@@ -30,6 +27,36 @@ class TokenInvalidError(TokenError):
 
 class TokenMissingClaimError(TokenError):
     """Raised when a required claim (e.g. 'sub') is missing."""
+
+    pass
+
+
+class TokenRevokedError(TokenError):
+    """Raised when a valid token has been revoked (e.g., logout)."""
+
+    pass
+
+
+class TokenStorageError(TokenError):
+    """Raised when there is a problem with token storage (Redis)."""
+
+    pass
+
+
+class TokenNotFoundError(TokenStorageError):
+    """Raised when a token is not found in Redis (could be expired or deleted)."""
+
+    pass
+
+
+class TokenDeserializationError(TokenStorageError):
+    """Raised when data retrieved from Redis cannot be parsed (e.g., invalid UUID)."""
+
+    pass
+
+
+class TokenPersistenceError(TokenStorageError):
+    """Raised when Redis write fails (network, timeout, etc.)."""
 
     pass
 
