@@ -1,5 +1,5 @@
-{
-  "jira-plugin.workingProject": "",
-  "python.analysis.extraPaths": ["/services"],
-  "postman.settings.dotenv-detection-notification-visibility": false
-}
+logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

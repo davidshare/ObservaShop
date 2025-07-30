@@ -1,8 +1,10 @@
-from sqlmodel import create_engine, Session
-from contextlib import contextmanager
-from src.config.config import config
-from loguru import logger
 from typing import Generator
+
+from sqlmodel import Session, create_engine
+from sqlalchemy import text
+
+from src.config.config import config
+from src.config.logger_config import log
 
 # Global engine instance
 engine = None
@@ -15,31 +17,32 @@ def init_sqlmodel() -> None:
     """
     global engine
     if engine is not None:
-        logger.warning(
-            "Database engine already initialized. Skipping re-initialization."
-        )
+        log.warning("Database engine already initialized. Skipping re-initialization.")
         return
 
-    engine = create_engine(
-        config.DATABASE_URL,
-        echo=False,  # Set to True in development
-        pool_pre_ping=True,
-        pool_recycle=300,
-        connect_args={
-            "sslmode": "disable"  # Change to "require" in production with SSL
-        },
-    )
+    try:
+        engine = create_engine(
+            config.DATABASE_URL,
+            echo=False,
+            pool_pre_ping=True,
+            pool_recycle=300,
+            connect_args={"sslmode": "disable"},
+        )
+        # Test connection
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        log.info("SQLModel engine initialized and connection verified")
+    except Exception as e:
+        log.critical(
+            "Failed to initialize SQLModel engine", error=str(e), exc_info=True
+        )
+        raise RuntimeError("Failed to initialize database engine") from e
 
-    logger.info(
-        "SQLModel engine initialized",
-    )
 
-
-@contextmanager
 def get_session() -> Generator[Session, None, None]:
     """
-    Context manager that yields a database session.
-    Ensures rollback on error and proper cleanup.
+    Dependency that provides a database session.
+    Ensures proper cleanup after use.
 
     Yields:
         Session: An active SQLModel session.
@@ -48,7 +51,7 @@ def get_session() -> Generator[Session, None, None]:
         RuntimeError: If engine is not initialized.
     """
     if engine is None:
-        logger.critical("Database session requested, but engine is not initialized")
+        log.critical("Database session requested, but engine is not initialized")
         raise RuntimeError(
             "Database engine not initialized. Call init_sqlmodel() first."
         )
@@ -57,7 +60,7 @@ def get_session() -> Generator[Session, None, None]:
     try:
         yield session
     except Exception as e:
-        logger.error("Database session error, rolling back", error=str(e))
+        log.error("Database session error, rolling back", error=str(e))
         session.rollback()
         raise
     finally:

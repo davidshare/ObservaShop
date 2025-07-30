@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from loguru import logger
-
+from src.config.logger_config import log
 from src.infrastructure.database.session import init_sqlmodel
 from src.infrastructure.redis import RedisService
+from src.interfaces.http.auth import router as auth_router
 
 # Global instances
 redis_service = RedisService()
@@ -16,24 +16,24 @@ async def lifespan(app: FastAPI):
     FastAPI lifespan handler: runs on startup and shutdown.
     Initializes database engine and Redis connection.
     """
-    logger.info("Starting auth-service initialization")
+    log.info("Starting auth-service initialization")
 
     # Startup
     try:
         init_sqlmodel()
-        logger.info("Database engine initialized")
+        log.info("Database engine initialized")
 
         await redis_service.connect()
-        logger.info("Redis connected")
+        log.info("Redis connected")
     except Exception as e:
-        logger.critical("Failed to initialize dependencies", error=str(e))
+        log.critical("Failed to initialize dependencies", error=str(e), exc_info=True)
         raise
 
     yield
 
     # Shutdown
     await redis_service.close()
-    logger.info("auth-service shutdown complete")
+    log.info("auth-service shutdown complete")
 
 
 app = FastAPI(
@@ -50,7 +50,7 @@ def read_root():
 
 
 def main():
-    print("Hello from auth-service!")
+    log.info("Hello from auth-service!")
 
 
 @app.get("/health")
@@ -71,6 +71,8 @@ async def health_check():
         "redis": "connected" if redis_healthy else "disconnected",
     }
 
+
+app.include_router(auth_router)
 
 if __name__ == "__main__":
     main()
