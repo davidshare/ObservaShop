@@ -161,6 +161,10 @@ class UserService:
             log.warning("User not found by ID", user_id=str(user_id))
             raise UserNotFoundError(f"User with ID {user_id} not found")
 
+        if not user.is_active:
+            log.warning("Inactive user access attempt", user_id=str(user_id))
+            raise UserNotFoundError("User account is inactive")
+
         log.info(
             "User validated for token refresh", user_id=str(user_id), email=user.email
         )

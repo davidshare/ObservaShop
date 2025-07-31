@@ -1,27 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session
-from src.config.logger_config import log
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from jose import jwt as jose_jwt
 from jose.exceptions import JWTError
+from sqlmodel import Session
 
+from src.application.user_service import UserService
 from src.config.config import config
+from src.config.logger_config import log
 from src.core.exceptions import (
-    UserAlreadyExistsError,
     InvalidCredentialsError,
-    UserNotFoundError,
+    TokenDeserializationError,
     TokenNotFoundError,
     TokenStorageError,
-    TokenDeserializationError,
+    UserAlreadyExistsError,
+    UserNotFoundError,
 )
 from src.infrastructure.database.session import get_session
-from src.infrastructure.services import redis_service, jwt_service
-from src.application.user_service import UserService
+from src.infrastructure.services import jwt_service, redis_service
 from src.interfaces.http.schemas import (
-    UserCreate,
-    UserResponse,
-    UserLogin,
-    TokenResponse,
     RefreshTokenRequest,
+    TokenResponse,
+    UserCreate,
+    UserLogin,
+    UserResponse,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -105,7 +107,7 @@ async def login(user: UserLogin, session: Session = Depends(get_session)):
         log.info("Login successful", user_id=str(user_id), email=user.email)
         return TokenResponse(
             access_token=access_token,
-            refresh_token=refresh_token,
+            refresh_token=new_refresh_token,
             token_type="bearer",
             expires_in=config.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
@@ -229,6 +231,68 @@ async def refresh_token(
     except Exception as e:
         log.critical(
             "Unexpected error during token refresh", error=str(e), exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.get("/users/{user_id}", response_model=UserResponse)
+async def get_user_profile(
+    user_id: UUID = Path(..., description="The UUID of the user to retrieve"),
+    current_user_id: UUID = Depends(jwt_service.get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """
+    Retrieve a user's profile by ID.
+    - Requires valid JWT.
+    - Users can only access their own profile.
+    """
+    try:
+        log.info(
+            "Get user profile request",
+            requested_user_id=str(user_id),
+            authenticated_user_id=str(current_user_id),
+        )
+
+        # Only allow self-access
+        if current_user_id != user_id:
+            log.warning(
+                "User attempted to access another user's profile",
+                user_id=str(current_user_id),
+                target_id=str(user_id),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only access your own profile",
+            )
+
+        user_service = UserService(session=session)
+        user = user_service.get_user_by_id(user_id)
+
+        log.info(
+            "User profile retrieved successfully",
+            user_id=str(user.id),
+            email=user.email,
+        )
+        return UserResponse.model_validate(user)
+
+    except UserNotFoundError as e:
+        log.warning("User not found", user_id=str(user_id))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        ) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during get user profile",
+            user_id=str(user_id),
+            error=str(e),
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
