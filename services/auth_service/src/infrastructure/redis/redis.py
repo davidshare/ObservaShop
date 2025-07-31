@@ -1,5 +1,3 @@
-# src/infrastructure/redis/redis.py
-
 from typing import Optional
 from uuid import UUID
 
@@ -9,9 +7,9 @@ from redis.asyncio import Redis as AsyncRedis
 from src.config.config import config
 from src.core.exceptions import (
     TokenDeserializationError,
+    TokenNotFoundError,
     TokenPersistenceError,
     TokenStorageError,
-    TokenNotFoundError,
 )
 
 
@@ -39,7 +37,10 @@ class RedisService:
     """
 
     def __init__(self) -> None:
-        """Initialize the RedisService with no active connection."""
+        """
+        Initialize the RedisService with no active connection.
+        The Redis client is created during connect() to support async initialization.
+        """
         self._client: Optional[AsyncRedis] = None
 
     async def connect(self) -> None:
@@ -100,6 +101,30 @@ class RedisService:
             logger.error("Error during Redis connection close", error=str(e))
         finally:
             self._client = None
+
+    async def ping(self) -> bool:
+        """
+        Check if Redis is responsive.
+
+        Returns:
+            bool: True if Redis is connected and responsive, False otherwise.
+        """
+        if self._client is None:
+            return False
+        try:
+            await self._client.ping()
+            return True
+        except Exception:
+            return False
+
+    async def is_connected(self) -> bool:
+        """
+        Check if the Redis client is connected (regardless of server responsiveness).
+
+        Returns:
+            bool: True if client is connected, False otherwise.
+        """
+        return self._client is not None
 
     async def set_refresh_token(
         self, token: str, user_id: UUID, ttl: Optional[int] = None

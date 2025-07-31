@@ -1,8 +1,13 @@
-from sqlmodel import Session, select
-from passlib.context import CryptContext
-from src.config.logger_config import log
+from uuid import UUID
 
-from src.core.exceptions import UserAlreadyExistsError
+from passlib.context import CryptContext
+from sqlmodel import Session, select
+
+from src.config.logger_config import log
+from src.core.exceptions import (
+    InvalidCredentialsError,
+    UserAlreadyExistsError,
+)
 from src.domain.models import User
 from src.interfaces.http.schemas import UserCreate
 
@@ -76,3 +81,62 @@ class UserService:
             )
             self.session.rollback()
             raise
+
+    def authenticate_user(self, email: str, password: str) -> UUID:
+        """
+        Authenticate a user by email and password.
+
+        Args:
+            email: User's email
+            password: Raw password (will be hashed and compared)
+
+        Returns:
+            UUID of the authenticated user.
+
+        Raises:
+            InvalidCredentialsError: If email not found, password is incorrect, or user is inactive.
+        """
+        log.debug("Authenticating user", email=email)
+
+        try:
+            # Query user by email
+            user = self.session.exec(select(User).where(User.email == email)).first()
+
+            if not user:
+                log.warning("Authentication failed: user not found", email=email)
+                # Do NOT distinguish between "user not found" and "invalid password"
+                # to prevent user enumeration attacks
+                raise InvalidCredentialsError("Incorrect email or password")
+
+            if not user.is_active:
+                log.warning(
+                    "Authentication failed: user is inactive", user_id=str(user.id)
+                )
+                raise InvalidCredentialsError("User account is inactive")
+
+            # Verify password
+            if not pwd_context.verify(password, user.hashed_password):
+                log.warning(
+                    "Authentication failed: invalid password", user_id=str(user.id)
+                )
+                raise InvalidCredentialsError("Incorrect email or password")
+
+            log.info(
+                "User authenticated successfully", user_id=str(user.id), email=email
+            )
+            return user.id
+
+        except InvalidCredentialsError:
+            # Re-raise known auth errors
+            raise
+        except Exception as e:
+            # Catch unexpected errors (e.g., DB connection failure)
+            log.critical(
+                "Unexpected error during user authentication",
+                email=email,
+                error=str(e),
+                exc_info=True,
+            )
+            raise InvalidCredentialsError(
+                "Authentication failed due to internal error"
+            ) from e

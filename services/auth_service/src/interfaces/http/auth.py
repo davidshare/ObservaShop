@@ -2,10 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from src.config.logger_config import log
 
-from src.core.exceptions import UserAlreadyExistsError
+from src.config.config import config
+from src.core.exceptions import UserAlreadyExistsError, InvalidCredentialsError
 from src.infrastructure.database.session import get_session
+from src.infrastructure.services import redis_service, jwt_service
 from src.application.user_service import UserService
-from src.interfaces.http.schemas import UserCreate, UserResponse
+from src.interfaces.http.schemas import (
+    UserCreate,
+    UserResponse,
+    UserLogin,
+    TokenResponse,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -15,7 +22,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def register_user(user: UserCreate, session: Session = Depends(get_session)):
+async def register_user(user: UserCreate, session: Session = Depends(get_session)):
     """
     Register a new user.
 
@@ -59,6 +66,51 @@ def register_user(user: UserCreate, session: Session = Depends(get_session)):
     except Exception as e:
         log.critical(
             "Unexpected error during registration",
+            email=user.email,
+            error=str(e),
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.post("/login", response_model=TokenResponse)
+async def login(user: UserLogin, session: Session = Depends(get_session)):
+    """
+    Authenticate a user and return JWT tokens.
+    """
+    try:
+        user_service = UserService(session=session)
+        user_id = user_service.authenticate_user(user.email, user.password)
+
+        # Generate tokens
+        access_token = jwt_service.create_access_token(user_id)
+        refresh_token = jwt_service.create_refresh_token(user_id)
+
+        # Store refresh token in Redis
+        await redis_service.set_refresh_token(refresh_token, user_id)
+
+        log.info("Login successful", user_id=str(user_id), email=user.email)
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+            expires_in=config.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
+
+    except InvalidCredentialsError as e:
+        log.warning("Login failed: invalid credentials", email=user.email)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during login",
             email=user.email,
             error=str(e),
             exc_info=True,

@@ -1,13 +1,11 @@
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
 
 from src.config.logger_config import log
 from src.infrastructure.database.session import init_sqlmodel
-from src.infrastructure.redis import RedisService
+from src.infrastructure.services import redis_service  # Import shared instance
 from src.interfaces.http.auth import router as auth_router
-
-# Global instances
-redis_service = RedisService()
 
 
 @asynccontextmanager
@@ -49,21 +47,11 @@ def read_root():
     return {"message": "Hello from auth-service!"}
 
 
-def main():
-    log.info("Hello from auth-service!")
-
-
 @app.get("/health")
 async def health_check():
     """Health check endpoint for liveness probe."""
-    db_healthy = True  # Engine exists
-    redis_healthy = False
-    try:
-        if redis_service._client:
-            await redis_service._client.ping()
-            redis_healthy = True
-    except Exception:
-        pass
+    db_healthy = True  # Assume engine initialized
+    redis_healthy = await redis_service.ping()  # ✅ Use public method
 
     return {
         "status": "healthy" if db_healthy and redis_healthy else "unhealthy",
@@ -73,6 +61,3 @@ async def health_check():
 
 
 app.include_router(auth_router)
-
-if __name__ == "__main__":
-    main()

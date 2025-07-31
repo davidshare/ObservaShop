@@ -60,3 +60,23 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True  # For ORM mode
+
+
+class UserLogin(BaseModel):
+    """
+    Schema for user login input.
+    """
+
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    """
+    Schema for JWT token response.
+    """
+
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int  # in seconds
