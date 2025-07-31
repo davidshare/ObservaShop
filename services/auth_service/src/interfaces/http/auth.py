@@ -24,6 +24,7 @@ from src.interfaces.http.schemas import (
     UserCreate,
     UserLogin,
     UserResponse,
+    UserUpdate,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -290,6 +291,79 @@ async def get_user_profile(
     except Exception as e:
         log.critical(
             "Unexpected error during get user profile",
+            user_id=str(user_id),
+            error=str(e),
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.patch("/users/{user_id}", response_model=UserResponse)
+async def update_user_profile(
+    user_update: UserUpdate,
+    user_id: UUID = Path(..., description="The UUID of the user to update"),
+    current_user_id: UUID = Depends(jwt_service.get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """
+    Update a user's profile.
+    - Requires valid JWT.
+    - Users can only update their own profile.
+    - Admins can update any profile (not implemented yet).
+    """
+    try:
+        log.info(
+            "Update user profile request",
+            requested_user_id=str(user_id),
+            authenticated_user_id=str(current_user_id),
+            update_data=user_update.model_dump(exclude_unset=True),
+        )
+
+        # ✅ Only allow self-access
+        if current_user_id != user_id:
+            log.warning(
+                "User attempted to update another user's profile",
+                user_id=str(current_user_id),
+                target_id=str(user_id),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only update your own profile",
+            )
+
+        user_service = UserService(session=session)
+        user = user_service.update_user(user_id, user_update)
+
+        log.info(
+            "User profile updated successfully",
+            user_id=str(user.id),
+            email=user.email,
+        )
+        return UserResponse.model_validate(user)
+
+    except UserNotFoundError as e:
+        log.warning("User not found", user_id=str(user_id))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        ) from e
+
+    except ValueError as e:
+        log.warning(
+            "Invalid input during user update", user_id=str(user_id), error=str(e)
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during update user profile",
             user_id=str(user_id),
             error=str(e),
             exc_info=True,

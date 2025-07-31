@@ -1,4 +1,5 @@
 from uuid import UUID
+from datetime import datetime
 
 from passlib.context import CryptContext
 from sqlmodel import Session, select
@@ -10,7 +11,7 @@ from src.core.exceptions import (
     UserNotFoundError,
 )
 from src.domain.models import User
-from src.interfaces.http.schemas import UserCreate
+from src.interfaces.http.schemas import UserCreate, UserUpdate
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -192,3 +193,50 @@ class UserService:
             raise UserNotFoundError("User account is inactive")
 
         log.info("User is valid and active", user_id=str(user_id))
+
+    def update_user(self, user_id: UUID, user_update: UserUpdate) -> User:
+        """
+        Update a user's profile fields.
+        Args:
+            user_id: UUID of the user to update.
+            user_update: UserUpdate schema with new data.
+        Returns:
+            Updated User object.
+        Raises:
+            UserNotFoundError: If user does not exist or is inactive.
+        """
+        log.debug(
+            "Updating user",
+            user_id=str(user_id),
+            update_data=user_update.model_dump(exclude_unset=True),
+        )
+        user = self.session.get(User, user_id)
+        if not user:
+            log.warning("User not found for update", user_id=str(user_id))
+            raise UserNotFoundError(f"User with ID {user_id} not found")
+
+        if not user.is_active:
+            log.warning("Inactive user update attempt", user_id=str(user_id))
+            raise UserNotFoundError("User account is inactive")
+
+        # Update only fields that are provided
+        for key, value in user_update.model_dump(exclude_unset=True).items():
+            setattr(user, key, value)
+
+        # Update timestamp
+        user.updated_at = datetime.utcnow()
+
+        try:
+            self.session.add(user)
+            self.session.commit()
+            self.session.refresh(user)
+            log.info(
+                "User updated successfully", user_id=str(user.id), email=user.email
+            )
+            return user
+        except Exception as e:
+            log.error(
+                "Failed to update user in database", user_id=str(user_id), error=str(e)
+            )
+            self.session.rollback()
+            raise

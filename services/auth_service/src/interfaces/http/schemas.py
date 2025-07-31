@@ -71,6 +71,21 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserUpdate(BaseModel):
+    """
+    Schema for updating user profile.
+    All fields are optional and nullable.
+    """
+
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+
+    model_config = {"extra": "forbid"}  # No extra fields allowed
+
+
 class TokenResponse(BaseModel):
     """
     Schema for JWT token response.
