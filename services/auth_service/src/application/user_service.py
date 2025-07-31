@@ -7,6 +7,7 @@ from src.config.logger_config import log
 from src.core.exceptions import (
     InvalidCredentialsError,
     UserAlreadyExistsError,
+    UserNotFoundError,
 )
 from src.domain.models import User
 from src.interfaces.http.schemas import UserCreate
@@ -140,3 +141,50 @@ class UserService:
             raise InvalidCredentialsError(
                 "Authentication failed due to internal error"
             ) from e
+
+    def get_user_by_id(self, user_id: UUID) -> User:
+        """
+        Retrieve a user by ID and ensure they are active.
+
+        Args:
+            user_id: UUID of the user.
+
+        Returns:
+            User object.
+
+        Raises:
+            UserNotFoundError: If user does not exist or is inactive.
+        """
+        log.debug("Fetching user by ID", user_id=str(user_id))
+        user = self.session.get(User, user_id)
+        if not user:
+            log.warning("User not found by ID", user_id=str(user_id))
+            raise UserNotFoundError(f"User with ID {user_id} not found")
+
+        log.info(
+            "User validated for token refresh", user_id=str(user_id), email=user.email
+        )
+        return user
+
+    def validate_user_active(self, user_id: UUID) -> None:
+        """
+        Verify that a user exists and is active.
+        Does not return the user object.
+
+        Args:
+            user_id: UUID of the user to validate.
+
+        Raises:
+            UserNotFoundError: If user does not exist or is inactive.
+        """
+        log.debug("Validating user is active", user_id=str(user_id))
+        user = self.session.get(User, user_id)
+        if not user:
+            log.warning("User not found", user_id=str(user_id))
+            raise UserNotFoundError(f"User with ID {user_id} not found")
+
+        if not user.is_active:
+            log.warning("User is inactive", user_id=str(user_id))
+            raise UserNotFoundError("User account is inactive")
+
+        log.info("User is valid and active", user_id=str(user_id))

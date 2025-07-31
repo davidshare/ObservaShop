@@ -80,3 +80,13 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int  # in seconds
+
+
+class RefreshTokenRequest(BaseModel):
+    """
+    Schema for refresh token request.
+    """
+
+    refresh_token: str
+
+    model_config = {"extra": "forbid"}
