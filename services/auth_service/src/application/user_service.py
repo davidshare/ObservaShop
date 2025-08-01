@@ -240,3 +240,43 @@ class UserService:
             )
             self.session.rollback()
             raise
+
+    def deactivate_user(self, user_id: UUID) -> User:
+        """
+        Deactivate a user by setting is_active=False.
+        Args:
+            user_id: UUID of the user to deactivate.
+        Returns:
+            Updated User object.
+        Raises:
+            UserNotFoundError: If user does not exist.
+        """
+        log.debug("Deactivating user", user_id=str(user_id))
+        user = self.session.get(User, user_id)
+        if not user:
+            log.warning("User not found for deactivation", user_id=str(user_id))
+            raise UserNotFoundError(f"User with ID {user_id} not found")
+
+        if not user.is_active:
+            log.info("User already inactive", user_id=str(user_id))
+            return user
+
+        user.is_active = False
+        user.updated_at = datetime.utcnow()
+
+        try:
+            self.session.add(user)
+            self.session.commit()
+            self.session.refresh(user)
+            log.info(
+                "User deactivated successfully", user_id=str(user.id), email=user.email
+            )
+            return user
+        except Exception as e:
+            log.error(
+                "Failed to deactivate user in database",
+                user_id=str(user_id),
+                error=str(e),
+            )
+            self.session.rollback()
+            raise
