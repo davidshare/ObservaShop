@@ -46,8 +46,18 @@ services:
       - POSTGRES_HOST=postgres-authz
       - POSTGRES_USER=${POSTGRES_AUTHZ_USER}
       - POSTGRES_PASSWORD=${POSTGRES_AUTHZ_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
       - POSTGRES_DB=authz
+      - ENV=development
+      - CONSOLE_LOG_LEVEL=DEBUG
+      - FILE_LOG_LEVEL=DEBUG
+      - ERROR_LOG_LEVEL=ERROR
     env_file: .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "8011:8000"
     networks:
