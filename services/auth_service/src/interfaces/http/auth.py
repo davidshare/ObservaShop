@@ -25,6 +25,8 @@ from src.interfaces.http.schemas import (
     UserLogin,
     UserResponse,
     UserUpdate,
+    UserListResponse,
+    UserListQuery,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -299,6 +301,75 @@ async def get_user_profile(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         ) from e
+
+
+# @router.get("/users", response_model=UserListResponse)
+# async def list_users(
+#     query: UserListQuery = Depends(),
+#     current_user_id: UUID = Depends(jwt_service.get_current_user_id),
+#     session: Session = Depends(get_session),
+# ):
+#     """
+#     List users with pagination, filtering, and sorting.
+#     - Requires admin role.
+#     - Supports filtering by email (partial), is_active.
+#     - Supports sorting by email, created_at, updated_at.
+#     - Returns paginated list with meta.
+#     """
+#     try:
+#         log.info(
+#             "List users request",
+#             admin_user_id=str(current_user_id),
+#             query_params=query.model_dump(),
+#         )
+
+#         # ✅ Verify admin role
+#         try:
+#             if not await authz_client.is_admin(current_user_id):
+#                 log.warning(
+#                     "Non-admin attempted to list users", user_id=str(current_user_id)
+#                 )
+#                 raise HTTPException(
+#                     status_code=status.HTTP_403_FORBIDDEN,
+#                     detail="Only admin can list users",
+#                 )
+#         except AuthorizationError as e:
+#             log.critical("Authorization check failed", error=str(e), exc_info=True)
+#             raise HTTPException(
+#                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+#                 detail="Authorization service unavailable",
+#             ) from e
+
+#         user_service = UserService(session=session)
+#         users, total = user_service.list_users(
+#             limit=query.limit,
+#             offset=query.offset,
+#             email=query.email,
+#             is_active=query.is_active,
+#             sort=query.sort,
+#         )
+
+#         user_responses = [UserResponse.model_validate(user) for user in users]
+
+#         meta = {
+#             "total": total,
+#             "limit": query.limit,
+#             "offset": query.offset,
+#             "pages": (total + query.limit - 1) // query.limit,
+#         }
+
+#         log.info("Users listed successfully", count=len(users), total=total)
+#         return UserListResponse(users=user_responses, meta=meta)
+
+#     except HTTPException:
+#         raise
+
+#     except Exception as e:
+#         log.critical("Unexpected error during list users", error=str(e), exc_info=True)
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail="Internal server error",
+#         ) from e
 
 
 @router.patch("/users/{user_id}", response_model=UserResponse)

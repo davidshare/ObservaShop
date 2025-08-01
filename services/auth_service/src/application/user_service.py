@@ -1,5 +1,6 @@
 from uuid import UUID
 from datetime import datetime
+from typing import Optional, List
 
 from passlib.context import CryptContext
 from sqlmodel import Session, select
@@ -193,6 +194,60 @@ class UserService:
             raise UserNotFoundError("User account is inactive")
 
         log.info("User is valid and active", user_id=str(user_id))
+
+    def list_users(
+        self,
+        limit: int = 10,
+        offset: int = 0,
+        email: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        sort: str = "created_at:desc",
+    ) -> tuple[List[User], int]:
+        """
+        Retrieve a paginated list of users with filters and sorting.
+        Args:
+            limit: Number of users to return.
+            offset: Number of users to skip.
+            email: Filter by email (partial match).
+            is_active: Filter by active status.
+            sort: Sort by field:direction (e.g., email:asc, created_at:desc).
+        Returns:
+            Tuple of (list of users, total count).
+        """
+        log.debug(
+            "Listing users",
+            limit=limit,
+            offset=offset,
+            email=email,
+            is_active=is_active,
+            sort=sort,
+        )
+
+        query = select(User)
+
+        # Apply filters
+        if email:
+            query = query.where(User.email.contains(email))
+        if is_active is not None:
+            query = query.where(User.is_active == is_active)
+
+        # Apply sorting
+        sort_field, direction = sort.split(":")
+        column = getattr(User, sort_field)
+        if direction == "desc":
+            column = column.desc()
+        query = query.order_by(column)
+
+        # Get total count
+        count_query = query.with_only_columns(User.id).order_by()
+        total = len(self.session.exec(count_query).all())
+
+        # Apply pagination
+        query = query.offset(offset).limit(limit)
+        users = self.session.exec(query).all()
+
+        log.info("Users listed successfully", count=len(users), total=total)
+        return users, total
 
     def update_user(self, user_id: UUID, user_update: UserUpdate) -> User:
         """

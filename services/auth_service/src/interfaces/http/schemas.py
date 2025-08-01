@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, field_validator
@@ -84,6 +84,50 @@ class UserUpdate(BaseModel):
     date_of_birth: Optional[datetime] = None
 
     model_config = {"extra": "forbid"}  # No extra fields allowed
+
+
+class UserListQuery(BaseModel):
+    """
+    Schema for query parameters to filter and paginate users.
+    """
+
+    limit: int = 10
+    offset: int = 0
+    email: Optional[str] = None
+    is_active: Optional[bool] = None
+    sort: str = "created_at:desc"
+
+    model_config = {"extra": "forbid"}
+
+    @field_validator("limit")
+    @classmethod
+    def validate_limit(cls, v: int) -> int:
+        """Method to validate limit"""
+        if v < 1 or v > 100:
+            raise ValueError("limit must be between 1 and 100")
+        return v
+
+    @field_validator("sort")
+    @classmethod
+    def validate_sort(cls, v: str) -> str:
+        """Method to valide the sort"""
+        field, direction = v.split(":") if ":" in v else (v, "asc")
+        if field not in ["email", "created_at", "updated_at"]:
+            raise ValueError(f"Invalid sort field: {field}")
+        if direction not in ["asc", "desc"]:
+            raise ValueError(f"Invalid sort direction: {direction}")
+        return v
+
+
+class UserListResponse(BaseModel):
+    """
+    Schema for paginated user list response.
+    """
+
+    users: List[UserResponse]
+    meta: dict
+
+    model_config = {"from_attributes": True}
 
 
 class TokenResponse(BaseModel):
