@@ -1,6 +1,7 @@
 from typing import Optional, Set
 from uuid import UUID
 from sqlmodel import Session
+from sqlalchemy import text
 from src.config.logger_config import log
 from src.core.exceptions import AuthorizationError
 from src.infrastructure.services import redis_service
@@ -21,7 +22,7 @@ class AuthorizationService:
         """
         self.session = session
 
-    def check_permission(
+    async def check_permission(
         self, user_id: UUID, action: str, resource: str
     ) -> tuple[bool, list[str]]:
         """
@@ -50,12 +51,12 @@ class AuthorizationService:
             return False, [f"{resource}:{action}"]
 
         # 1. Try cache
-        result = self._check_permission_from_cache(user_id, action, resource)
+        result = await self._check_permission_from_cache(user_id, action, resource)
         if result is not None:
             return result
 
         # 2. Fallback to DB
-        return self._check_permission_from_db(user_id, action, resource)
+        return await self._check_permission_from_db(user_id, action, resource)
 
     async def _check_permission_from_cache(
         self, user_id: UUID, action: str, resource: str
@@ -95,10 +96,11 @@ class AuthorizationService:
         """
         required_permission = f"{resource}:{action}"
 
+        # ✅ Fixed query: Removed OVER(), use proper GROUP BY
         query = """
         SELECT
             p.name,
-            BOOL_OR(r.name = 'superadmin') FILTER (WHERE r.name IS NOT NULL) OVER() AS is_superadmin
+            BOOL_OR(r.name = 'superadmin') FILTER (WHERE r.name IS NOT NULL) AS is_superadmin
         FROM authz.user_roles ur
         JOIN authz.roles r ON ur.role_id = r.id
         LEFT JOIN authz.role_permissions rp ON r.id = rp.role_id
@@ -108,17 +110,18 @@ class AuthorizationService:
         """
 
         try:
-            result = self.session.exec(query, {"user_id": str(user_id)}).all()
+            result = self.session.exec(
+                text(query), params={"user_id": str(user_id)}
+            ).all()
 
             if not result:
                 log.warning("User has no roles or does not exist", user_id=str(user_id))
                 return False, [required_permission]
 
-            # Extract permissions and superadmin flag
             permissions = {row[0] for row in result if row[0] is not None}
             is_superadmin = any(row[1] for row in result)
 
-            # Update cache with correct structure
+            # Update cache
             try:
                 cache_data = {
                     "permissions": permissions,

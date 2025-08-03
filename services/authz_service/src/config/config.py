@@ -29,6 +29,7 @@ class Config(BaseSettings):
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
+    REDIS_TTL: int = 604800
 
     # Kafka
     KAFKA_BOOTSTRAP_SERVER: str = "kafka:9092"

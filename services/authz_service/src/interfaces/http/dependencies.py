@@ -16,7 +16,7 @@ def require_permission(action: str, resource: str):
     Uses a single call to check_permission, which returns both role and permission data.
     """
 
-    def dependency(
+    async def dependency(
         current_user_id: UUID = Depends(jwt_service.get_current_user_id),
         session: Session = Depends(get_session),
     ) -> UUID:
@@ -31,7 +31,7 @@ def require_permission(action: str, resource: str):
 
         try:
             # Single call to get ALL permissions and superadmin status
-            allowed, missing = authz_service.check_permission(
+            allowed, missing = await authz_service.check_permission(
                 user_id=current_user_id,
                 action=action,
                 resource=resource,

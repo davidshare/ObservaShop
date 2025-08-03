@@ -75,7 +75,7 @@ async def check_authorization(
             pass
 
         authz_service = AuthorizationService(session=session)
-        allowed, missing = authz_service.check_permission(
+        allowed, missing = await authz_service.check_permission(
             user_id=request.user_id,
             action=request.action,
             resource=request.resource,
@@ -138,6 +138,19 @@ async def create_role(
 
         log.info("Role created successfully", role_id=str(role.id), name=role.name)
         return RoleResponse.model_validate(role)
+
+    except RoleAlreadyExistsError as e:
+        log.warning("Role creation failed: name already exists", name=role_create.name)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+
+    except ValueError as e:
+        log.warning("Invalid input during role creation", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         log.critical(
@@ -360,7 +373,6 @@ async def assign_role_to_user(
     user_role_create: UserRoleCreate,
     session: Session = Depends(get_session),
     http_client: AsyncClient = Depends(lambda: AsyncClient(timeout=10.0)),
-    # ✅ CORRECT: Use require_permission
     _: UUID = Depends(require_permission("assign", "user_role")),
 ):
     """
@@ -437,7 +449,6 @@ async def remove_role_from_user(
     role_id: UUID = Path(...),
     session: Session = Depends(get_session),
     http_client: AsyncClient = Depends(lambda: AsyncClient(timeout=10.0)),
-    # ✅ CORRECT: Use require_permission
     _: UUID = Depends(require_permission("revoke", "user_role")),
 ):
     """
@@ -505,7 +516,7 @@ async def get_user_roles(
         if current_user_id != user_id:
             # Must have user_role:read permission
             authz_service = AuthorizationService(session=session)
-            allowed, _ = authz_service.check_permission(
+            allowed, _ = await authz_service.check_permission(
                 current_user_id, "read", "user_role"
             )
             if not allowed:
