@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from src.config.config import config as settings
-from src.infrastructure.database.models import (
+from src.domain.models import (
     Role,
     Permission,
     RolePermission,

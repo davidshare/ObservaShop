@@ -1,47 +1,113 @@
-# src/infrastructure/jwt/jwt.py
+"""
+JWT Service Module
 
-from typing import Dict, Any
+Provides secure, observable, and dependency-injectable JWT validation for the authz-service.
+Uses the shared JWT_SECRET to verify tokens issued by auth-service, ensuring zero-trust
+between microservices. Does NOT call auth-service for validation — all checks are local.
+
+This service is responsible for:
+- Verifying JWT signature and expiry
+- Extracting user_id from the 'sub' claim
+- Converting internal domain exceptions to HTTP responses
+- Integrating with FastAPI dependency injection via OAuth2PasswordBearer
+
+The service is designed to be:
+- Secure: Validates tokens locally with shared secret
+- Observable: Full structured logging with loguru
+- Resilient: Handles signature, expiry, format, and claim errors
+- Dependency-injectable: Used via Depends(jwt_service.get_current_user_id)
+
+Example usage in FastAPI endpoint:
+    @router.get("/protected")
+    async def protected_route(user_id: UUID = Depends(jwt_service.get_current_user_id)):
+        return {"user_id": user_id}
+"""
+
+from typing import Any, Dict
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError, ExpiredSignatureError
-from config.logger_config import log
-from pydantic import BaseModel
+from jose import ExpiredSignatureError, JWTError, jwt
 
+from src.config.config import JWTConfig
+from src.config.logger_config import log
 from src.core.exceptions import (
     TokenExpiredError,
     TokenInvalidError,
     TokenMissingClaimError,
 )
 
+
+# ------------------------
+# OAuth2 Password Bearer Scheme
+# ------------------------
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+"""
+OAuth2 scheme for Bearer token authentication.
+Enables:
+- Swagger UI "Authorize" button
+- Automatic extraction of Authorization: Bearer <token>
+- Standard OAuth2 password flow
+"""
 
 
-class JWTConfig(BaseModel):
-    secret_key: str
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
-    refresh_token_expire_days: int = 7
+# ------------------------
+# JWT Service
+# ------------------------
 
 
 class JWTService:
+    """
+    A secure, observable, and testable service for JWT validation.
+    Validates tokens locally using the shared JWT_SECRET — does NOT call auth-service.
+    Converts domain exceptions to HTTP responses for FastAPI integration.
+
+    This service is a singleton, instantiated once in src/infrastructure/services.py
+    with config from src/config/config.py.
+
+    Attributes:
+        config (JWTConfig): The JWT configuration (secret, algorithm, expiry)
+    """
+
     def __init__(self, config: JWTConfig):
+        """
+        Initialize the JWTService with configuration.
+        Logs service startup for observability.
+
+        Args:
+            config (JWTConfig): The JWT configuration object.
+        """
         self.config = config
         log.info(
             "JWTService initialized [algorithm={}, access_ttl={}m]",
-            config.algorithm,
-            config.access_token_expire_minutes,
+            config.ALGORITHM,
+            config.ACCESS_TOKEN_EXPIRE_MINUTES,
         )
 
     def verify_token(self, token: str) -> Dict[str, Any]:
+        """
+        Verify and decode a JWT token.
+        Does NOT extract user_id — returns full payload for further processing.
+
+        Args:
+            token (str): The raw JWT token string (without 'Bearer ' prefix).
+
+        Returns:
+            Dict[str, Any]: The decoded JWT payload (e.g., {'sub': 'user-id', 'exp': 123456}).
+
+        Raises:
+            TokenExpiredError: If the token has expired.
+            TokenInvalidError: If the token signature is invalid, malformed, or decoding fails.
+        """
         log.debug("Verifying JWT token (length={})", len(token))
 
         try:
             payload = jwt.decode(
                 token,
-                self.config.secret_key,
-                algorithms=[self.config.algorithm],
+                self.config.JWT_SECRET,
+                algorithms=[self.config.ALGORITHM],
             )
             log.success("Token decoded successfully [sub={}]", payload.get("sub"))
             return payload
@@ -59,6 +125,27 @@ class JWTService:
             raise TokenInvalidError("Internal token validation error") from e
 
     def get_current_user_id(self, token: str = Depends(oauth2_scheme)) -> UUID:
+        """
+        FastAPI dependency: extracts and validates the user_id from a Bearer token.
+        This is the primary entry point for JWT authentication in endpoints.
+
+        Flow:
+        1. Extract token via OAuth2PasswordBearer
+        2. Verify signature and expiry
+        3. Extract 'sub' claim
+        4. Validate it is a valid UUID
+        5. Return UUID or raise HTTPException
+
+        Args:
+            token (str): The Bearer token, automatically injected by FastAPI.
+
+        Returns:
+            UUID: The user_id from the 'sub' claim.
+
+        Raises:
+            HTTPException: 401 if token is missing, expired, invalid, or missing 'sub'
+            HTTPException: 500 if an unexpected internal error occurs
+        """
         log.info("Authenticating user from Bearer token")
 
         try:
@@ -105,6 +192,7 @@ class JWTService:
             ) from e
 
         except HTTPException:
+            # Re-raise HTTPException (401, 403, etc.)
             raise
 
         except Exception as e:

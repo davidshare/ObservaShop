@@ -3,8 +3,8 @@ Centralized service instances for the authz-service.
 Ensures single, shared instances of RedisService, JWTService, etc.
 """
 
-from src.infrastructure.redis import RedisService
-from src.infrastructure.jwt import JWTService
+from src.infrastructure.redis.redis import RedisService
+from src.infrastructure.jwt.jwt import JWTService
 from src.config.config import config
 
 # Single shared instances

@@ -6,8 +6,9 @@ from pydantic import BaseModel
 class JWTConfig(BaseModel):
     """JWT Config needed for authorisation"""
 
-    secret_key: str
-    algorithm: str = "HS256"
+    JWT_SECRET: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
 
 
 class Config(BaseSettings):
@@ -16,6 +17,7 @@ class Config(BaseSettings):
     # JWT
     JWT_SECRET: str
     ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
 
     # Postgres
     POSTGRES_HOST: str
@@ -43,8 +45,9 @@ class Config(BaseSettings):
     def jwt_config(self) -> JWTConfig:
         """Method to return JWT Config"""
         return JWTConfig(
-            secret_key=self.JWT_SECRET,
-            algorithm=self.ALGORITHM,
+            JWT_SECRET=self.JWT_SECRET,
+            ALGORITHM=self.ALGORITHM,
+            ACCESS_TOKEN_EXPIRE_MINUTES=self.ACCESS_TOKEN_EXPIRE_MINUTES,
         )
 
     model_config = SettingsConfigDict(
