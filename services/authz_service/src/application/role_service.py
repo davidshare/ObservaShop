@@ -9,8 +9,10 @@ from src.core.exceptions import (
     AuthorizationError,
     RoleAlreadyExistsError,
     RoleNotFoundError,
+    UserRoleAlreadyExistsError,
+    UserRoleNotFoundError,
 )
-from src.domain.models import Role
+from src.domain.models import Role, UserRole
 from src.interfaces.http.schemas import RoleCreate, RoleUpdate
 
 
@@ -216,3 +218,91 @@ class RoleService:
 
         log.info("Roles listed successfully", count=len(roles), total=total)
         return roles, total
+
+    def assign_role_to_user(self, user_id: UUID, role_id: UUID) -> UserRole:
+        """
+        Assign a role to a user.
+        """
+        log.debug("Assigning role to user", user_id=str(user_id), role_id=str(role_id))
+
+        # Validate role exists
+        role = self.session.get(Role, role_id)
+        if not role:
+            log.warning("Cannot assign role: role not found", role_id=str(role_id))
+            raise RoleNotFoundError(f"Role with ID {role_id} not found")
+
+        # Check if already assigned
+        existing = self.session.exec(
+            select(UserRole).where(
+                UserRole.user_id == user_id, UserRole.role_id == role_id
+            )
+        ).first()
+        if existing:
+            log.warning(
+                "User already has role", user_id=str(user_id), role_id=str(role_id)
+            )
+            raise UserRoleAlreadyExistsError(
+                f"User {user_id} already has role {role_id}"
+            )
+
+        user_role = UserRole(user_id=user_id, role_id=role_id)
+        self.session.add(user_role)
+        try:
+            self.session.commit()
+            self.session.refresh(user_role)
+            log.info(
+                "Role assigned to user", user_id=str(user_id), role_id=str(role_id)
+            )
+            return user_role
+        except Exception as e:
+            log.error("Failed to assign role to user", error=str(e))
+            self.session.rollback()
+            raise
+
+    def remove_role_from_user(self, user_id: UUID, role_id: UUID) -> None:
+        """
+        Remove a role from a user.
+        """
+        log.debug("Removing role from user", user_id=str(user_id), role_id=str(role_id))
+
+        user_role = self.session.exec(
+            select(UserRole).where(
+                UserRole.user_id == user_id, UserRole.role_id == role_id
+            )
+        ).first()
+
+        if not user_role:
+            log.warning(
+                "User-role assignment not found",
+                user_id=str(user_id),
+                role_id=str(role_id),
+            )
+            raise UserRoleNotFoundError(f"User {user_id} does not have role {role_id}")
+
+        try:
+            self.session.delete(user_role)
+            self.session.commit()
+            log.info(
+                "Role removed from user", user_id=str(user_id), role_id=str(role_id)
+            )
+        except Exception as e:
+            log.error("Failed to remove role from user", error=str(e))
+            self.session.rollback()
+            raise
+
+    def get_user_roles(
+        self, user_id: UUID, limit: int = 10, offset: int = 0
+    ) -> tuple[List[UserRole], int]:
+        """
+        Get all roles assigned to a user.
+        """
+        log.debug("Fetching roles for user", user_id=str(user_id))
+
+        query = select(UserRole).where(UserRole.user_id == user_id)
+        total = len(self.session.exec(query).all())
+
+        query = query.offset(offset).limit(limit)
+        user_roles = self.session.exec(query).all()
+
+        log.info("User roles retrieved", user_id=str(user_id), count=len(user_roles))
+        return user_roles, total
