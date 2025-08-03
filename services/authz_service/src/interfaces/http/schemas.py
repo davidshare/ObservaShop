@@ -155,3 +155,26 @@ class PermissionListResponse(BaseModel):
     meta: dict
 
     model_config = {"from_attributes": True}
+
+
+class RolePermissionCreate(BaseModel):
+    """
+    Schema for assigning a permission to a role.
+    """
+
+    role_id: UUID
+    permission_id: int
+
+    model_config = {"extra": "forbid"}
+
+
+class RolePermissionResponse(BaseModel):
+    """
+    Schema for returning role-permission assignment.
+    """
+
+    role_id: UUID
+    permission_id: int
+    assigned_at: datetime
+
+    model_config = {"from_attributes": True}

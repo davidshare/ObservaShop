@@ -9,6 +9,7 @@ from src.application.authorization_service import AuthorizationService
 from src.application.role_service import RoleService
 from src.application.permission_service import PermissionService
 from src.application.user_role_service import UserRoleService
+from src.application.role_permission import RolePermissionService
 from src.config.logger_config import log
 from src.core.exceptions import (
     AuthorizationError,
@@ -36,6 +37,8 @@ from src.interfaces.http.schemas import (
     PermissionUpdate,
     PermissionResponse,
     PermissionListResponse,
+    RolePermissionCreate,
+    RolePermissionResponse,
 )
 
 router = APIRouter(tags=["authz"])
@@ -819,6 +822,127 @@ async def list_permissions(
         log.critical(
             "Unexpected error during list permissions", error=str(e), exc_info=True
         )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.post(
+    "/authz/role-permissions",
+    response_model=RolePermissionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def assign_permission_to_role(
+    role_permission_create: RolePermissionCreate,
+    session: Session = Depends(get_session),
+    _: UUID = Depends(require_permission("assign", "role_permission")),
+):
+    """
+    Assign a permission to a role.
+    - Requires: superadmin OR role_permission:assign permission
+    - Validates role and permission exist.
+    - Returns created assignment.
+    """
+    try:
+        log.info(
+            "Assign permission to role request",
+            role_id=str(role_permission_create.role_id),
+            permission_id=role_permission_create.permission_id,
+        )
+
+        role_permission_service = RolePermissionService(session=session)
+        role_permission = role_permission_service.assign_permission_to_role(
+            role_permission_create.role_id, role_permission_create.permission_id
+        )
+
+        log.info(
+            "Permission assigned successfully",
+            role_id=str(role_permission.role_id),
+            permission_id=role_permission.permission_id,
+        )
+        return RolePermissionResponse.model_validate(role_permission)
+
+    except RoleNotFoundError as e:
+        log.warning("Role not found", role_id=str(role_permission_create.role_id))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Role not found"
+        ) from e
+
+    except PermissionNotFoundError as e:
+        log.warning(
+            "Permission not found", permission_id=role_permission_create.permission_id
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found"
+        ) from e
+
+    except ValueError as e:
+        log.warning(
+            "Permission already assigned",
+            role_id=str(role_permission_create.role_id),
+            permission_id=role_permission_create.permission_id,
+        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during role-permission assignment", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.delete(
+    "/authz/role-permissions/{role_id}/{permission_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def remove_permission_from_role(
+    role_id: UUID = Path(...),
+    permission_id: int = Path(...),
+    session: Session = Depends(get_session),
+    _: UUID = Depends(require_permission("revoke", "role_permission")),
+):
+    """
+    Remove a permission from a role.
+    - Requires: superadmin OR role_permission:revoke permission.
+    - Returns 204 No Content.
+    """
+    try:
+        log.info(
+            "Remove permission from role request",
+            role_id=str(role_id),
+            permission_id=permission_id,
+        )
+
+        role_permission_service = RolePermissionService(session=session)
+        role_permission_service.remove_permission_from_role(role_id, permission_id)
+
+        log.info(
+            "Permission removed successfully",
+            role_id=str(role_id),
+            permission_id=permission_id,
+        )
+        return  # 204 No Content
+
+    except ValueError as e:
+        log.warning(
+            "Permission not assigned to role",
+            role_id=str(role_id),
+            permission_id=permission_id,
+        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical("Unexpected error during role-permission removal", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
