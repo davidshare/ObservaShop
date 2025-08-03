@@ -1,16 +1,20 @@
 from typing import Optional
 from uuid import UUID
+from httpx import AsyncClient
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlmodel import Session
 
 from src.application.authorization_service import AuthorizationService
 from src.application.role_service import RoleService
+from src.application.user_role_service import UserRoleService
 from src.config.logger_config import log
 from src.core.exceptions import (
     AuthorizationError,
     RoleAlreadyExistsError,
     RoleNotFoundError,
+    UserRoleNotFoundError,
+    UserRoleAlreadyExistsError,
 )
 from src.infrastructure.database.session import get_session
 from src.infrastructure.services import jwt_service
@@ -22,6 +26,9 @@ from src.interfaces.http.schemas import (
     RoleListResponse,
     RoleResponse,
     RoleUpdate,
+    UserRoleResponse,
+    UserRoleListResponse,
+    UserRoleCreate,
 )
 
 router = APIRouter(tags=["authz"])
@@ -328,6 +335,206 @@ async def list_roles(
 
     except Exception as e:
         log.critical("Unexpected error during list roles", error=str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.post(
+    "/authz/user-roles",
+    response_model=UserRoleResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def assign_role_to_user(
+    user_role_create: UserRoleCreate,
+    session: Session = Depends(get_session),
+    http_client: AsyncClient = Depends(lambda: AsyncClient(timeout=10.0)),
+    # ✅ CORRECT: Use require_permission
+    _: UUID = Depends(require_permission("assign", "user_role")),
+):
+    """
+    Assign a role to a user.
+    - Requires: superadmin OR user_role:assign permission
+    - Validates user exists via auth-service.
+    - Validates role exists.
+    - Returns created assignment.
+    """
+    try:
+        log.info(
+            "Assign role to user request",
+            user_id=str(user_role_create.user_id),
+            role_id=str(user_role_create.role_id),
+        )
+
+        user_role_service = UserRoleService(session=session, http_client=http_client)
+
+        # ✅ Validate user exists
+        if not await user_role_service.validate_user_exists(user_role_create.user_id):
+            log.warning(
+                "Cannot assign role: user not found",
+                user_id=str(user_role_create.user_id),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        # ✅ Validate role exists
+        if not user_role_service.validate_role_exists(user_role_create.role_id):
+            log.warning(
+                "Cannot assign role: role not found",
+                role_id=str(user_role_create.role_id),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Role not found"
+            )
+
+        user_role = user_role_service.assign_role_to_user(
+            user_role_create.user_id, user_role_create.role_id
+        )
+
+        log.info(
+            "Role assigned successfully",
+            user_id=str(user_role.user_id),
+            role_id=str(user_role.role_id),
+        )
+        return UserRoleResponse.model_validate(user_role)
+
+    except UserRoleAlreadyExistsError as e:
+        log.warning(
+            "User already has role",
+            user_id=str(user_role_create.user_id),
+            role_id=str(user_role_create.role_id),
+        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical("Unexpected error during role assignment", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.delete(
+    "/authz/user-roles/{user_id}/{role_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def remove_role_from_user(
+    user_id: UUID = Path(...),
+    role_id: UUID = Path(...),
+    session: Session = Depends(get_session),
+    http_client: AsyncClient = Depends(lambda: AsyncClient(timeout=10.0)),
+    # ✅ CORRECT: Use require_permission
+    _: UUID = Depends(require_permission("revoke", "user_role")),
+):
+    """
+    Remove a role from a user.
+    - Requires: superadmin OR user_role:revoke permission.
+    - Returns 204 No Content.
+    """
+    try:
+        log.info(
+            "Remove role from user request", user_id=str(user_id), role_id=str(role_id)
+        )
+
+        user_role_service = UserRoleService(session=session, http_client=http_client)
+
+        user_role_service.remove_role_from_user(user_id, role_id)
+
+        log.info(
+            "Role removed successfully", user_id=str(user_id), role_id=str(role_id)
+        )
+        return  # 204 No Content
+
+    except UserRoleNotFoundError as e:
+        log.warning(
+            "User-role assignment not found", user_id=str(user_id), role_id=str(role_id)
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User-role assignment not found",
+        ) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical("Unexpected error during role removal", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.get("/authz/user-roles/{user_id}", response_model=UserRoleListResponse)
+async def get_user_roles(
+    user_id: UUID = Path(...),
+    limit: int = 10,
+    offset: int = 0,
+    session: Session = Depends(get_session),
+    current_user_id: UUID = Depends(jwt_service.get_current_user_id),
+    http_client: AsyncClient = Depends(lambda: AsyncClient(timeout=10.0)),
+    # ✅ CORRECT: Use require_permission only if not self
+):
+    """
+    Get all roles assigned to a user.
+    - User can view their own roles.
+    - Admin can view any user's roles.
+    """
+    try:
+        log.info(
+            "Get user roles request",
+            target_user_id=str(user_id),
+            requester_id=str(current_user_id),
+        )
+
+        # ✅ Self or admin check
+        if current_user_id != user_id:
+            # Must have user_role:read permission
+            authz_service = AuthorizationService(session=session)
+            allowed, _ = authz_service.check_permission(
+                current_user_id, "read", "user_role"
+            )
+            if not allowed:
+                log.warning(
+                    "User lacks permission to read user roles",
+                    user_id=str(current_user_id),
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Missing required permission: user_role:read",
+                )
+
+        user_role_service = UserRoleService(session=session, http_client=http_client)
+
+        user_roles, total = user_role_service.get_user_roles(
+            user_id, limit=limit, offset=offset
+        )
+
+        role_responses = [UserRoleResponse.model_validate(ur) for ur in user_roles]
+
+        meta = {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "pages": (total + limit - 1) // limit,
+        }
+
+        log.info(
+            "User roles retrieved successfully",
+            user_id=str(user_id),
+            count=len(user_roles),
+        )
+        return UserRoleListResponse(roles=role_responses, meta=meta)
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical("Unexpected error during get user roles", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",

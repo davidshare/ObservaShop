@@ -113,3 +113,14 @@ class UserRoleNotFoundError(Exception):
     def __init__(self, message: str):
         super().__init__(message)
         self.message = message
+
+
+class UserNotFoundError(Exception):
+    """
+    Raised when a user with the given ID does not exist or is inactive.
+    This is used in authz-service when validating user_id via auth-service or database lookup.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
