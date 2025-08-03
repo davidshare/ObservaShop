@@ -1,6 +1,6 @@
 import subprocess
 import uvicorn
-from loguru import logger
+from src.config.logger_config import log
 from main import app
 
 
@@ -12,5 +12,5 @@ if __name__ == "__main__":
     APP_HOST = "0.0.0.0"
     APP_PORT = 8000
     run_migrations()
-    logger.info("Starting auth-service on {}:{}", APP_HOST, APP_PORT)
+    log.info("Starting auth-service on {}:{}", APP_HOST, APP_PORT)
     uvicorn.run(app, host=APP_HOST, port=APP_PORT)
