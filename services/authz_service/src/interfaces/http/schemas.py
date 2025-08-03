@@ -74,10 +74,12 @@ class AuthZCheckResponse(BaseModel):
     allowed: bool
     missing_permissions: List[str] = []
 
+
 class UserRoleCreate(BaseModel):
     """
     Schema for assigning a role to a user.
     """
+
     user_id: UUID
     role_id: UUID
 
@@ -88,6 +90,7 @@ class UserRoleResponse(BaseModel):
     """
     Schema for returning user-role assignment.
     """
+
     user_id: UUID
     role_id: UUID
     assigned_at: datetime
@@ -99,7 +102,56 @@ class UserRoleListResponse(BaseModel):
     """
     Schema for paginated user-role list response.
     """
+
     roles: List[UserRoleResponse]
+    meta: dict
+
+    model_config = {"from_attributes": True}
+
+
+class PermissionCreate(BaseModel):
+    """
+    Schema for creating a new permission.
+    """
+
+    name: str
+    description: Optional[str] = None
+
+    model_config = {"extra": "forbid"}
+
+
+class PermissionUpdate(BaseModel):
+    """
+    Schema for updating an existing permission.
+    All fields are optional.
+    """
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+    model_config = {"extra": "forbid"}
+
+
+class PermissionResponse(BaseModel):
+    """
+    Schema for returning permission data.
+    """
+
+    id: int
+    name: str
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PermissionListResponse(BaseModel):
+    """
+    Schema for paginated permission list response.
+    """
+
+    permissions: List[PermissionResponse]
     meta: dict
 
     model_config = {"from_attributes": True}

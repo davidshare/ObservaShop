@@ -7,6 +7,7 @@ from sqlmodel import Session
 
 from src.application.authorization_service import AuthorizationService
 from src.application.role_service import RoleService
+from src.application.permission_service import PermissionService
 from src.application.user_role_service import UserRoleService
 from src.config.logger_config import log
 from src.core.exceptions import (
@@ -15,6 +16,8 @@ from src.core.exceptions import (
     RoleNotFoundError,
     UserRoleNotFoundError,
     UserRoleAlreadyExistsError,
+    PermissionAlreadyExistsError,
+    PermissionNotFoundError,
 )
 from src.infrastructure.database.session import get_session
 from src.infrastructure.services import jwt_service
@@ -29,6 +32,10 @@ from src.interfaces.http.schemas import (
     UserRoleResponse,
     UserRoleListResponse,
     UserRoleCreate,
+    PermissionCreate,
+    PermissionUpdate,
+    PermissionResponse,
+    PermissionListResponse,
 )
 
 router = APIRouter(tags=["authz"])
@@ -535,6 +542,283 @@ async def get_user_roles(
 
     except Exception as e:
         log.critical("Unexpected error during get user roles", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.post(
+    "/authz/permissions",
+    response_model=PermissionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_permission(
+    permission_create: PermissionCreate,
+    session: Session = Depends(get_session),
+    _: UUID = Depends(require_permission("create", "permission")),
+):
+    """
+    Create a new permission.
+    - Requires: superadmin OR permission:create permission
+    - Validates name uniqueness.
+    - Returns created permission.
+    """
+    try:
+        log.info("Create permission request", name=permission_create.name)
+
+        permission_service = PermissionService(session=session)
+        permission = permission_service.create_permission(permission_create)
+
+        log.info(
+            "Permission created successfully",
+            permission_id=str(permission.id),
+            name=permission.name,
+        )
+        return PermissionResponse.model_validate(permission)
+
+    except PermissionAlreadyExistsError as e:
+        log.warning(
+            "Permission creation failed: name already exists",
+            name=permission_create.name,
+        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+
+    except ValueError as e:
+        log.warning("Invalid input during permission creation", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during permission creation",
+            name=permission_create.name,
+            error=str(e),
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.get("/authz/permissions/{permission_id}", response_model=PermissionResponse)
+async def get_permission(
+    permission_id: int = Path(..., description="The ID of the permission to retrieve"),
+    session: Session = Depends(get_session),
+    _: UUID = Depends(require_permission("read", "permission")),
+):
+    """
+    Retrieve a permission by ID.
+    - Requires: superadmin OR permission:read permission.
+    """
+    try:
+        log.info("Get permission request", permission_id=permission_id)
+
+        permission_service = PermissionService(session=session)
+        permission = permission_service.get_permission_by_id(permission_id)
+
+        log.info(
+            "Permission retrieved successfully",
+            permission_id=permission_id,
+            name=permission.name,
+        )
+        return PermissionResponse.model_validate(permission)
+
+    except PermissionNotFoundError as e:
+        log.warning("Permission not found", permission_id=permission_id)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found"
+        ) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during get permission",
+            permission_id=permission_id,
+            error=str(e),
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.patch("/authz/permissions/{permission_id}", response_model=PermissionResponse)
+async def update_permission(
+    permission_update: PermissionUpdate,
+    permission_id: int = Path(..., description="The ID of the permission to update"),
+    session: Session = Depends(get_session),
+    _: UUID = Depends(require_permission("update", "permission")),
+):
+    """
+    Update a permission's fields.
+    - Requires: superadmin OR permission:update permission.
+    """
+    try:
+        log.info(
+            "Update permission request",
+            permission_id=permission_id,
+            update_data=permission_update.model_dump(exclude_unset=True),
+        )
+
+        permission_service = PermissionService(session=session)
+        permission = permission_service.update_permission(
+            permission_id, permission_update
+        )
+
+        log.info(
+            "Permission updated successfully",
+            permission_id=permission_id,
+            name=permission.name,
+        )
+        return PermissionResponse.model_validate(permission)
+
+    except PermissionNotFoundError as e:
+        log.warning("Permission not found for update", permission_id=permission_id)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found"
+        ) from e
+
+    except PermissionAlreadyExistsError as e:
+        log.warning(
+            "Permission update failed: name already exists", permission_id=permission_id
+        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during permission update",
+            permission_id=permission_id,
+            error=str(e),
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.delete(
+    "/authz/permissions/{permission_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_permission(
+    permission_id: int = Path(..., description="The ID of the permission to delete"),
+    session: Session = Depends(get_session),
+    _: UUID = Depends(require_permission("delete", "permission")),
+):
+    """
+    Delete a permission by ID.
+    - Requires: superadmin OR permission:delete permission.
+    - Returns 204 No Content.
+    """
+    try:
+        log.info("Delete permission request", permission_id=permission_id)
+
+        permission_service = PermissionService(session=session)
+        permission_service.delete_permission(permission_id)
+
+        log.info("Permission deleted successfully", permission_id=permission_id)
+        return  # 204 No Content
+
+    except PermissionNotFoundError as e:
+        log.warning("Permission not found for deletion", permission_id=permission_id)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found"
+        ) from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during permission deletion",
+            permission_id=permission_id,
+            error=str(e),
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.get("/authz/permissions", response_model=PermissionListResponse)
+async def list_permissions(
+    limit: int = 10,
+    offset: int = 0,
+    name: Optional[str] = None,
+    sort: str = "created_at:desc",
+    session: Session = Depends(get_session),
+    _: UUID = Depends(require_permission("list", "permission")),
+):
+    """
+    List permissions with pagination, filtering, and sorting.
+    - Requires: superadmin OR permission:list permission.
+    - Supports filtering by name (partial), sorting (name, created_at), pagination.
+    - Returns paginated list with meta.
+    """
+    try:
+        log.info(
+            "List permissions request", limit=limit, offset=offset, name=name, sort=sort
+        )
+
+        # Validate inputs
+        if limit < 1 or limit > 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="limit must be between 1 and 100",
+            )
+
+        allowed_sort_fields = ["name", "created_at", "updated_at"]
+        sort_field, direction = sort.split(":") if ":" in sort else (sort, "asc")
+        if sort_field not in allowed_sort_fields:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid sort field: {sort_field}",
+            )
+        if direction not in ["asc", "desc"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid sort direction: {direction}",
+            )
+
+        permission_service = PermissionService(session=session)
+        permissions, total = permission_service.list_permissions(
+            limit=limit, offset=offset, name=name, sort=sort
+        )
+
+        permission_responses = [
+            PermissionResponse.model_validate(p) for p in permissions
+        ]
+
+        meta = {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "pages": (total + limit - 1) // limit,
+        }
+
+        log.info("Permissions listed successfully", count=len(permissions), total=total)
+        return PermissionListResponse(permissions=permission_responses, meta=meta)
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during list permissions", error=str(e), exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
