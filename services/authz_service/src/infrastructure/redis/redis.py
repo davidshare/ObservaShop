@@ -1,34 +1,22 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 from uuid import UUID
-
 from redis.asyncio import Redis as AsyncRedis
-
 from src.config.config import config
 from src.config.logger_config import log
-from src.core.exceptions import (
-    TokenPersistenceError,
-    TokenStorageError,
-)
 
 
 class RedisService:
     """
     RedisService provides a secure, observable, and dependency-injectable interface
-    for managing refresh tokens and session state in the auth-service.
+    for managing refresh tokens and session state in the authz-service.
 
     This service uses Redis to:
-    - Store refresh tokens with user_id mapping
-    - Enforce 7-day TTL (604800 seconds)
-    - Support token revocation and rotation
-    - Prevent reuse of old tokens
+    - Cache user permission sets with superadmin flag
+    - Support fast authorization checks
+    - Prevent service disruption on Redis failure (fail-soft)
 
     The service is designed for use with FastAPI's dependency injection system
     and integrates with loguru for structured logging.
-
-    Example usage:
-        redis = RedisService()
-        await redis.connect()
-        await redis.close()
     """
 
     def __init__(self) -> None:
@@ -122,54 +110,64 @@ class RedisService:
         return self._client is not None
 
     async def set_user_permissions(
-        self, user_id: UUID, permissions: set[str], ttl: int = 300
+        self, user_id: UUID, data: Dict[str, Any], ttl: int = None
     ) -> None:
         """
-        Cache a user's full permission set in Redis.
+        Cache a user's full permission set and superadmin status in Redis.
+        Data should be: {"permissions": set[str], "is_superadmin": bool}
         """
         if self._client is None:
             log.error("Cannot set user permissions: Redis client not connected")
-            raise TokenStorageError(
-                "Redis client not initialized. Call connect() first."
-            )
+            # Fail-soft: do not raise, just return
+            return
 
+        actual_ttl = ttl if ttl is not None else config.REDIS_TTL
         key = f"permissions:{user_id}"
 
         try:
-            await self._client.setex(key, ttl, ",".join(sorted(permissions)))
+            import json
+
+            value = json.dumps(
+                {
+                    "permissions": list(data.get("permissions", [])),
+                    "is_superadmin": data.get("is_superadmin", False),
+                }
+            )
+            await self._client.setex(key, actual_ttl, value)
             log.info(
                 "User permissions cached",
                 user_id=str(user_id),
-                permission_count=len(permissions),
-                ttl=ttl,
+                permission_count=len(data.get("permissions", [])),
+                is_superadmin=data.get("is_superadmin", False),
+                ttl=actual_ttl,
             )
         except (ConnectionError, TimeoutError) as e:
-            log.error(
+            log.warning(
                 "Failed to cache user permissions due to connectivity issue",
                 user_id=str(user_id),
                 error=str(e),
             )
-            raise TokenPersistenceError(
-                "Failed to persist permissions: connection error"
-            ) from e
+            # Fail-soft: do not raise
+            return
         except Exception as e:
             log.error(
                 "Unexpected error caching user permissions",
                 user_id=str(user_id),
                 error=str(e),
             )
-            raise TokenPersistenceError("Failed to store permissions in Redis") from e
+            # Fail-soft: do not raise
+            return
 
-    async def get_user_permissions(self, user_id: UUID) -> Optional[set[str]]:
+    async def get_user_permissions(self, user_id: UUID) -> Optional[Dict[str, Any]]:
         """
-        Retrieve cached permissions for a user.
+        Retrieve cached permissions and superadmin status for a user.
+        Returns a dict: {"permissions": set[str], "is_superadmin": bool}
         Returns None if not found, expired, or Redis is unavailable.
         """
         if self._client is None:
-            log.error("Cannot get user permissions: Redis client not connected")
-            raise TokenStorageError(
-                "Redis client not initialized. Call connect() first."
-            )
+            log.warning("Cannot get user permissions: Redis client not connected")
+            # Fail-soft: return None, fallback to DB
+            return None
 
         key = f"permissions:{user_id}"
 
@@ -179,13 +177,20 @@ class RedisService:
                 log.debug("Permission cache miss", user_id=str(user_id))
                 return None
 
-            permissions = set(value.split(","))
+            import json
+
+            data = json.loads(value)
+            result = {
+                "permissions": set(data.get("permissions", [])),
+                "is_superadmin": data.get("is_superadmin", False),
+            }
             log.info(
                 "Permission cache hit",
                 user_id=str(user_id),
-                permission_count=len(permissions),
+                permission_count=len(result["permissions"]),
+                is_superadmin=result["is_superadmin"],
             )
-            return permissions
+            return result
 
         except (ConnectionError, TimeoutError) as e:
             log.warning(
@@ -193,7 +198,7 @@ class RedisService:
                 user_id=str(user_id),
                 error=str(e),
             )
-            # On Redis failure, return None — fallback to DB
+            # Fail-soft: return None, fallback to DB
             return None
 
         except Exception as e:
@@ -203,4 +208,5 @@ class RedisService:
                 error=str(e),
                 exc_info=True,
             )
-            return None  # Never let Redis failure block authorization
+            # Fail-soft: never let Redis failure block authorization
+            return None

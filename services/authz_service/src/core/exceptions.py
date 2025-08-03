@@ -50,3 +50,66 @@ class TokenPersistenceError(TokenStorageError):
     """Raised when Redis write fails (network, timeout, etc.)."""
 
     pass
+
+
+# ------------------------
+# Role-related errors
+# ------------------------
+class RoleNotFoundError(Exception):
+    """
+    Raised when a role with the given ID does not exist.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class RoleAlreadyExistsError(Exception):
+    """
+    Raised when trying to create a role with a name that already exists.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class PermissionNotFoundError(Exception):
+    """
+    Raised when a permission with the given ID does not exist.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class PermissionAlreadyExistsError(Exception):
+    """
+    Raised when trying to create a permission with a name that already exists.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class UserRoleAlreadyExistsError(Exception):
+    """
+    Raised when trying to assign a role to a user who already has it.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class UserRoleNotFoundError(Exception):
+    """
+    Raised when a user-role assignment does not exist.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message

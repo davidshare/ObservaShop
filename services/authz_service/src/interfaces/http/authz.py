@@ -4,11 +4,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
 from src.application.authorization_service import AuthorizationService
+from src.application.role_service import RoleService
 from src.config.logger_config import log
 from src.core.exceptions import AuthorizationError
 from src.infrastructure.database.session import get_session
 from src.infrastructure.services import jwt_service
-from src.interfaces.http.schemas import AuthZCheckRequest, AuthZCheckResponse
+from src.interfaces.http.schemas import (
+    AuthZCheckRequest,
+    AuthZCheckResponse,
+    RoleCreate,
+    RoleResponse,
+)
+from interfaces.http.dependencies import require_permission
 
 router = APIRouter(tags=["authz"])
 
@@ -76,6 +83,42 @@ async def check_authorization(
     except Exception as e:
         log.critical(
             "Unexpected error during authorization check",
+            error=str(e),
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
+@router.post(
+    "/authz/roles", response_model=RoleResponse, status_code=status.HTTP_201_CREATED
+)
+async def create_role(
+    role_create: RoleCreate,
+    session: Session = Depends(get_session),
+    _: UUID = Depends(require_permission("create", "role")),
+):
+    """
+    Create a new role.
+    - Requires: superadmin OR role:create permission
+    - Validates name uniqueness.
+    - Returns created role.
+    """
+    try:
+        log.info("Create role request", role_name=role_create.name)
+
+        role_service = RoleService(session=session)
+        role = role_service.create_role(role_create)
+
+        log.info("Role created successfully", role_id=str(role.id), name=role.name)
+        return RoleResponse.model_validate(role)
+
+    except Exception as e:
+        log.critical(
+            "Unexpected error during role creation",
+            role_name=role_create.name,
             error=str(e),
             exc_info=True,
         )

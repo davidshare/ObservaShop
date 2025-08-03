@@ -1,5 +1,5 @@
+from typing import Optional, Set
 from uuid import UUID
-from typing import Optional
 from sqlmodel import Session
 from src.config.logger_config import log
 from src.core.exceptions import AuthorizationError
@@ -36,6 +36,19 @@ class AuthorizationService:
             resource=resource,
         )
 
+        # Validate inputs
+        if not user_id:
+            log.warning("Invalid user_id: None or empty")
+            return False, [f"{resource}:{action}"]
+
+        if not action or not resource:
+            log.warning(
+                "Missing action or resource",
+                action=action,
+                resource=resource,
+            )
+            return False, [f"{resource}:{action}"]
+
         # 1. Try cache
         result = self._check_permission_from_cache(user_id, action, resource)
         if result is not None:
@@ -52,18 +65,22 @@ class AuthorizationService:
         Returns None if cache is unavailable or miss.
         """
         try:
-            cached_permissions = await redis_service.get_user_permissions(user_id)
-            if cached_permissions is None:
+            cached_data = await redis_service.get_user_permissions(user_id)
+            if cached_data is None:
+                log.debug("Permission cache miss", user_id=str(user_id))
                 return None
 
-            required_permission = f"{resource}:{action}"
-            is_superadmin = "superadmin" in cached_permissions
+            is_superadmin: bool = cached_data.get("is_superadmin", False)
+            permissions: Set[str] = cached_data.get("permissions", set())
 
             if is_superadmin:
                 log.info("Superadmin access granted (cache)", user_id=str(user_id))
                 return True, []
 
-            return required_permission in cached_permissions, [required_permission]
+            required_permission = f"{resource}:{action}"
+            allowed = required_permission in permissions
+            missing = [] if allowed else [required_permission]
+            return allowed, missing
 
         except Exception as e:
             log.warning("Permission cache check failed", error=str(e))
@@ -97,15 +114,17 @@ class AuthorizationService:
                 log.warning("User has no roles or does not exist", user_id=str(user_id))
                 return False, [required_permission]
 
+            # Extract permissions and superadmin flag
             permissions = {row[0] for row in result if row[0] is not None}
             is_superadmin = any(row[1] for row in result)
 
-            # ✅ Update cache
+            # Update cache with correct structure
             try:
-                cache_permissions = permissions
-                if is_superadmin:
-                    cache_permissions = permissions | {"superadmin"}
-                await redis_service.set_user_permissions(user_id, cache_permissions)
+                cache_data = {
+                    "permissions": permissions,
+                    "is_superadmin": is_superadmin,
+                }
+                await redis_service.set_user_permissions(user_id, cache_data)
             except Exception as e:
                 log.warning("Failed to update permission cache", error=str(e))
 
@@ -129,6 +148,24 @@ class AuthorizationService:
             )
             return False, [required_permission]
 
+        except AuthorizationError:
+            raise
+
+        except ValueError as e:
+            log.warning("Invalid input during DB permission check", error=str(e))
+            raise AuthorizationError("Invalid input provided") from e
+
+        except ConnectionError as e:
+            log.critical(
+                "Database connection failed during permission check", exc_info=True
+            )
+            raise AuthorizationError("Database unavailable") from e
+
         except Exception as e:
-            log.critical("Unexpected error during DB permission check", exc_info=True)
+            log.critical(
+                "Unexpected error during DB permission check",
+                user_id=str(user_id),
+                error=str(e),
+                exc_info=True,
+            )
             raise AuthorizationError("Internal authorization error") from e
