@@ -34,8 +34,11 @@ class Config(BaseSettings):
     # Kafka
     KAFKA_BOOTSTRAP_SERVER: str = "kafka:9092"
 
-    # Auth Service URL
+    # Service URLs
     AUTH_SERVICE_URL: str = "http://localhost:8010"
+
+    # Shared config
+    INTERNAL_SHARED_SECRET: str
 
     @property
     def DATABASE_URL(self) -> str:

@@ -29,11 +29,11 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     await redis_service.close()
-    log.info("auth-service shutdown complete")
+    log.info("authz-service shutdown complete")
 
 
 app = FastAPI(
-    title="auth-service",
+    title="authz-service",
     description="User authorisation and access management for ObservaShop",
     version="0.1.0",
     lifespan=lifespan,

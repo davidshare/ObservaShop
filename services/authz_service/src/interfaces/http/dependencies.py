@@ -17,9 +17,13 @@ def require_permission(action: str, resource: str):
     """
 
     async def dependency(
-        current_user_id: UUID = Depends(jwt_service.get_current_user_id),
+        current_user_id_and_token: [UUID, str] = Depends(
+            jwt_service.get_current_user_id
+        ),
         session: Session = Depends(get_session),
     ) -> UUID:
+        current_user_id, _ = current_user_id_and_token
+
         log.debug(
             "Checking permission",
             user_id=str(current_user_id),

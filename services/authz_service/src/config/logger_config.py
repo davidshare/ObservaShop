@@ -30,8 +30,8 @@ def configure_logger(
 
     # Set default console log level based on environment
     default_console_level = "DEBUG" if env.lower() == "development" else "INFO"
-    console_level = console_level or os.getenv(
-        "CONSOLE_LOG_LEVEL", default_console_level
+    console_level = (
+        console_level or os.getenv("CONSOLE_LOG_LEVEL", None) or default_console_level
     )
 
     # Ensure log directory exists

@@ -7,12 +7,14 @@ from httpx import AsyncClient, HTTPStatusError, RequestError
 from sqlmodel import Session, select
 
 from src.config.logger_config import log
+from src.config.config import config
 from src.core.exceptions import (
     UserNotFoundError,
     UserRoleAlreadyExistsError,
     UserRoleNotFoundError,
+    UserValidationError,
 )
-from src.domain.models import UserRole
+from src.domain.models import Role, UserRole
 
 
 class UserRoleService:
@@ -24,29 +26,55 @@ class UserRoleService:
     def __init__(self, session: Session, http_client: AsyncClient):
         self.session = session
         self.http_client = http_client
-        self.auth_service_url = "http://auth-service:8000"
+        self.auth_service_url = config.AUTH_SERVICE_URL
 
-    async def validate_user_exists(self, user_id: UUID) -> bool:
+    async def validate_user_exists(self, user_id: UUID, jwt_token: str) -> bool:
         """
         Validate that a user exists by calling auth-service.
         Returns True if user exists and is active.
         """
         try:
+            headers = {"Authorization": f"Bearer {jwt_token}"}
             response = await self.http_client.get(
-                f"{self.auth_service_url}/auth/users/{user_id}"
+                f"{self.auth_service_url}/auth/users/{user_id}", headers=headers
             )
             response.raise_for_status()
             return True
         except HTTPStatusError as e:
-            if e.response.status_code == 404:
+            status_code = e.response.status_code
+            if status_code == 404:
                 log.warning("User not found in auth-service", user_id=str(user_id))
-                return False
-            log.warning(
-                "Auth-service returned error",
-                status=e.response.status_code,
-                user_id=str(user_id),
-            )
-            return False
+                raise UserNotFoundError(f"User with ID {user_id} not found") from e
+
+            elif status_code == 401:
+                log.critical(
+                    "Service-to-service authentication failed: authz-service JWT rejected by auth-service",
+                    user_id=str(user_id),
+                    auth_service_status=status_code,
+                )
+                raise UserValidationError(
+                    "Failed to authenticate with user service. Check JWT_SECRET and service roles."
+                ) from e
+
+            elif status_code == 403:
+                log.critical(
+                    "Service-to-service permission denied: authz-service lacks permission to read users",
+                    user_id=str(user_id),
+                    auth_service_status=status_code,
+                )
+                raise UserValidationError(
+                    "Insufficient permissions to validate user. Ensure authz-service has 'user:read' role."
+                ) from e
+
+            else:
+                log.error(
+                    "Unexpected error from auth-service",
+                    user_id=str(user_id),
+                    status=status_code,
+                )
+                raise UserValidationError(
+                    f"User validation failed: {status_code}"
+                ) from e
         except RequestError as e:
             log.critical(
                 "Failed to connect to auth-service", error=str(e), exc_info=True

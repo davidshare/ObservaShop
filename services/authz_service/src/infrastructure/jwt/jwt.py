@@ -124,27 +124,46 @@ class JWTService:
             log.critical("Unexpected error during token verification", error=str(e))
             raise TokenInvalidError("Internal token validation error") from e
 
-    def get_current_user_id(self, token: str = Depends(oauth2_scheme)) -> UUID:
+    def get_current_user_id(
+        self, token: str = Depends(oauth2_scheme)
+    ) -> tuple[UUID, str]:
         """
-        FastAPI dependency: extracts and validates the user_id from a Bearer token.
-        This is the primary entry point for JWT authentication in endpoints.
+        FastAPI dependency: extracts and validates the user_id from a Bearer token and returns both the user_id and the raw token.
+
+        This method is the primary entry point for JWT authentication in endpoints. It validates the token's signature and expiration,
+        extracts the 'sub' claim, and verifies it is a valid UUID. The raw token is returned alongside the user_id to enable secure
+        service-to-service communication (e.g., forwarding the token to auth-service).
 
         Flow:
-        1. Extract token via OAuth2PasswordBearer
-        2. Verify signature and expiry
-        3. Extract 'sub' claim
-        4. Validate it is a valid UUID
-        5. Return UUID or raise HTTPException
+            1. Extract token via OAuth2PasswordBearer.
+            2. Verify signature and expiry using `verify_token`.
+            3. Extract the 'sub' claim (user ID).
+            4. Validate the 'sub' claim is a valid UUID.
+            5. Return the UUID and the raw token string.
 
         Args:
-            token (str): The Bearer token, automatically injected by FastAPI.
+            token (str): The Bearer token, automatically injected by FastAPI via the oauth2_scheme dependency.
 
         Returns:
-            UUID: The user_id from the 'sub' claim.
+            tuple[UUID, str]: A tuple containing:
+                - The user_id extracted from the 'sub' claim.
+                - The original raw JWT token string, for forwarding to other services.
 
         Raises:
-            HTTPException: 401 if token is missing, expired, invalid, or missing 'sub'
-            HTTPException: 500 if an unexpected internal error occurs
+            HTTPException: 401 if the token is missing, expired, invalid, or missing the 'sub' claim.
+            HTTPException: 500 if an unexpected internal error occurs during validation.
+
+        Example:
+            This dependency is used in endpoints like:
+
+            @router.get("/authz/user-roles/{user_id}")
+            async def get_user_roles(
+                user_id: UUID,
+                current_user: tuple[UUID, str] = Depends(jwt_service.get_current_user_id)
+            ):
+                current_user_id, raw_token = current_user
+                # Use current_user_id for authorization checks
+                # Use raw_token to call auth-service for user validation
         """
         log.info("Authenticating user from Bearer token")
 
@@ -159,7 +178,7 @@ class JWTService:
             try:
                 user_id = UUID(user_id_str)
                 log.info("Successfully authenticated user_id={}", user_id)
-                return user_id
+                return user_id, token  # Return both the UUID and the raw token
             except ValueError as e:
                 log.warning(
                     "Token contains invalid UUID format in 'sub' claim",

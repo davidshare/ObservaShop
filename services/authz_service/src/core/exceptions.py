@@ -124,3 +124,11 @@ class UserNotFoundError(Exception):
     def __init__(self, message: str):
         super().__init__(message)
         self.message = message
+
+
+class UserValidationError(Exception):
+    """Raised when there's a service-to-service communication failure."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message

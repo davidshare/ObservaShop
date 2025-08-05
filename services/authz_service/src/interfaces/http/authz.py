@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import UUID
 from httpx import AsyncClient
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status, Header
 from sqlmodel import Session
 
 from src.application.authorization_service import AuthorizationService
@@ -10,6 +10,7 @@ from src.application.role_service import RoleService
 from src.application.permission_service import PermissionService
 from src.application.user_role_service import UserRoleService
 from src.application.role_permission import RolePermissionService
+from src.config.config import config
 from src.config.logger_config import log
 from src.core.exceptions import (
     AuthorizationError,
@@ -19,6 +20,8 @@ from src.core.exceptions import (
     UserRoleAlreadyExistsError,
     PermissionAlreadyExistsError,
     PermissionNotFoundError,
+    UserValidationError,
+    UserNotFoundError,
 )
 from src.infrastructure.database.session import get_session
 from src.infrastructure.services import jwt_service
@@ -372,6 +375,9 @@ async def list_roles(
 async def assign_role_to_user(
     user_role_create: UserRoleCreate,
     session: Session = Depends(get_session),
+    current_user_id_and_token: tuple[UUID, str] = Depends(
+        jwt_service.get_current_user_id
+    ),
     http_client: AsyncClient = Depends(lambda: AsyncClient(timeout=10.0)),
     _: UUID = Depends(require_permission("assign", "user_role")),
 ):
@@ -382,6 +388,8 @@ async def assign_role_to_user(
     - Validates role exists.
     - Returns created assignment.
     """
+    _, raw_token = current_user_id_and_token
+
     try:
         log.info(
             "Assign role to user request",
@@ -391,8 +399,10 @@ async def assign_role_to_user(
 
         user_role_service = UserRoleService(session=session, http_client=http_client)
 
-        # ✅ Validate user exists
-        if not await user_role_service.validate_user_exists(user_role_create.user_id):
+        # Validate user exists
+        if not await user_role_service.validate_user_exists(
+            user_role_create.user_id, jwt_token=raw_token
+        ):
             log.warning(
                 "Cannot assign role: user not found",
                 user_id=str(user_role_create.user_id),
@@ -401,7 +411,7 @@ async def assign_role_to_user(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
 
-        # ✅ Validate role exists
+        # Validate role exists
         if not user_role_service.validate_role_exists(user_role_create.role_id):
             log.warning(
                 "Cannot assign role: role not found",
@@ -422,6 +432,17 @@ async def assign_role_to_user(
         )
         return UserRoleResponse.model_validate(user_role)
 
+    except UserNotFoundError as e:
+        log.critical("Service-to-service validation failed", error=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+    except UserValidationError as e:
+        log.critical("Service-to-service validation failed", error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Internal service validation error. Contact administrator.",
+        ) from e
+
     except UserRoleAlreadyExistsError as e:
         log.warning(
             "User already has role",
@@ -435,6 +456,7 @@ async def assign_role_to_user(
 
     except Exception as e:
         log.critical("Unexpected error during role assignment", exc_info=True)
+        log.critical(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -957,4 +979,42 @@ async def remove_permission_from_role(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
+        ) from e
+
+
+@router.get("/authz/internal/users/{user_id}/permissions")
+async def get_user_permissions_for_service(
+    user_id: UUID,
+    shared_secret: str = Header(..., alias="X-Internal-Secret"),
+    session: Session = Depends(get_session),
+):
+    """
+    Internal endpoint for auth-service to fetch a user's permissions.
+    Authenticated with a shared secret, not JWT.
+    """
+    # Validate shared secret
+    if shared_secret != config.INTERNAL_SHARED_SECRET:
+        log.warning("Internal access denied: invalid shared secret")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    authz_service = AuthorizationService(session=session)
+
+    try:
+        permissions, is_superadmin = authz_service.get_permissions_for_user(user_id)
+
+        return {
+            "user_id": str(user_id),
+            "permissions": permissions,
+            "is_superadmin": is_superadmin,
+        }
+
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        ) from e
+
+    except Exception as e:
+        log.critical("Unexpected error", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal error"
         ) from e

@@ -172,3 +172,48 @@ class AuthorizationService:
                 exc_info=True,
             )
             raise AuthorizationError("Internal authorization error") from e
+
+    def get_permissions_for_user(self, user_id: UUID) -> tuple[list[str], bool]:
+        """
+        Get the user's permissions and superadmin status.
+        Used by internal services to enrich JWTs.
+
+        Args:
+            user_id: UUID of the user
+
+        Returns:
+            Tuple of (permissions_list, is_superadmin)
+        """
+        query = """
+        SELECT
+            p.name,
+            BOOL_OR(r.name = 'superadmin') FILTER (WHERE r.name IS NOT NULL) AS is_superadmin
+        FROM authz.user_roles ur
+        JOIN authz.roles r ON ur.role_id = r.id
+        LEFT JOIN authz.role_permissions rp ON r.id = rp.role_id
+        LEFT JOIN authz.permissions p ON rp.permission_id = p.id
+        WHERE ur.user_id = :user_id
+        GROUP BY p.name;
+        """
+
+        try:
+            result = self.session.exec(
+                text(query), params={"user_id": str(user_id)}
+            ).all()
+
+            if not result:
+                return [], False
+
+            permissions = {row[0] for row in result if row[0] is not None}
+            is_superadmin = any(row[1] for row in result)
+
+            return list(permissions), is_superadmin
+
+        except Exception as e:
+            log.critical(
+                "Failed to fetch permissions for user",
+                user_id=str(user_id),
+                error=str(e),
+                exc_info=True,
+            )
+            raise AuthorizationError("Internal authorization error") from e
