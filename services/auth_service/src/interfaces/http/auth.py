@@ -278,14 +278,18 @@ async def refresh_token(
 @router.get("/users/{user_id}", response_model=UserResponse)
 async def get_user_profile(
     user_id: UUID = Path(..., description="The UUID of the user to retrieve"),
-    current_user_id: UUID = Depends(jwt_service.get_current_user_id),
+    current_user_id_and_claims: tuple[UUID, dict] = Depends(
+        jwt_service.get_current_user_id_with_claims
+    ),
     session: Session = Depends(get_session),
 ):
     """
     Retrieve a user's profile by ID.
     - Requires valid JWT.
-    - Users can only access their own profile.
+    - Allowed for: self, superadmin, or users with 'user:read' permission.
     """
+    current_user_id, claims = current_user_id_and_claims
+
     try:
         log.info(
             "Get user profile request",
@@ -293,16 +297,30 @@ async def get_user_profile(
             authenticated_user_id=str(current_user_id),
         )
 
-        # Only allow self-access
-        if current_user_id != user_id:
+        # Allow self-access
+        if current_user_id == user_id:
+            pass
+        # Check superadmin
+        elif claims.get("is_superadmin", False):
+            log.info("Superadmin access granted", user_id=str(current_user_id))
+        # Check user:read permission
+        elif "user:read" in claims.get("permissions", []):
+            log.info(
+                "Permission-based access granted",
+                user_id=str(current_user_id),
+                permission="user:read",
+            )
+        else:
             log.warning(
-                "User attempted to access another user's profile",
+                "Access denied to user profile",
                 user_id=str(current_user_id),
                 target_id=str(user_id),
+                is_superadmin=claims.get("is_superadmin", False),
+                permissions=claims.get("permissions", []),
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only access your own profile",
+                detail="You do not have permission to view this profile",
             )
 
         user_service = UserService(session=session)
