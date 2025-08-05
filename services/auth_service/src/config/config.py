@@ -31,6 +31,10 @@ class Config(BaseSettings):
     REDIS_DB: int
     REDIS_TTL: int = 604800
 
+    # External Service ENVs
+    INTERNAL_SHARED_SECRET: str
+    AUTHZ_SERVICE_URL: str
+
     @property
     def DATABASE_URL(self) -> str:
         """Returns the database string"""

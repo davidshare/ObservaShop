@@ -15,9 +15,13 @@ from src.core.exceptions import (
     TokenStorageError,
     UserAlreadyExistsError,
     UserNotFoundError,
+    UserValidationError,
+    PermissionDeniedError,
+    ServiceUnavailableError,
 )
 from src.infrastructure.database.session import get_session
 from src.infrastructure.services import jwt_service, redis_service
+from src.infrastructure.http.authz_client import AuthzServiceClient
 from src.interfaces.http.schemas import (
     RefreshTokenRequest,
     TokenResponse,
@@ -97,20 +101,29 @@ async def login(user: UserLogin, session: Session = Depends(get_session)):
     Authenticate a user and return JWT tokens.
     """
     try:
+        log.info("Login attempt", email=user.email)
+
         user_service = UserService(session=session)
         user_id = user_service.authenticate_user(user.email, user.password)
 
+        authz_client = AuthzServiceClient()
+        user_data = await authz_client.get_user_permissions(user_id)
+
         # Generate tokens
-        access_token = jwt_service.create_access_token(user_id)
-        new_refresh_token = jwt_service.create_refresh_token(user_id)
+        access_token = jwt_service.create_access_token(
+            user_id=user_id,
+            permissions=user_data["permissions"],
+            is_superadmin=user_data["is_superadmin"],
+        )
+        refresh_token = jwt_service.create_refresh_token(user_id)
 
         # Store refresh token in Redis
-        await redis_service.set_refresh_token(new_refresh_token, user_id)
+        await redis_service.set_refresh_token(refresh_token, user_id)
 
         log.info("Login successful", user_id=str(user_id), email=user.email)
         return TokenResponse(
             access_token=access_token,
-            refresh_token=new_refresh_token,
+            refresh_token=refresh_token,
             token_type="bearer",
             expires_in=config.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
@@ -121,6 +134,27 @@ async def login(user: UserLogin, session: Session = Depends(get_session)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+
+    except UserValidationError as e:
+        log.critical("User validation failed at login", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="User account invalid. Contact administrator.",
+        ) from e
+
+    except PermissionDeniedError as e:
+        log.critical("Service-to-service permission denied", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal service error. Contact administrator.",
+        ) from e
+
+    except ServiceUnavailableError as e:
+        log.critical("Authz-service unavailable during login", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication temporarily unavailable",
         ) from e
 
     except Exception as e:

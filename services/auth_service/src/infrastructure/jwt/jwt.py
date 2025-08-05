@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from uuid import UUID
 
 from fastapi import HTTPException, status, Depends
@@ -30,6 +30,7 @@ Enables:
 # JWT Service
 # ------------------------
 
+
 class JWTService:
     """
     A secure, observable, and testable service for JWT creation and validation.
@@ -46,22 +47,51 @@ class JWTService:
         )
 
     def create_access_token(
-        self, user_id: UUID, expires_delta: Optional[timedelta] = None
+        self,
+        user_id: UUID,
+        permissions: Optional[List[str]] = None,
+        is_superadmin: bool = False,
+        expires_delta: Optional[timedelta] = None,
     ) -> str:
         """
-        Create a short-lived access token.
+        Create a short-lived access token with embedded authorization claims.
+
+        Args:
+            user_id: UUID of the authenticated user
+            permissions: List of permission strings (e.g., "user:read") to embed in the token
+            is_superadmin: Whether the user has superadmin privileges
+            expires_delta: Optional custom expiry time (defaults to config value)
+
+        Returns:
+            Signed JWT access token string
+
+        Raises:
+            RuntimeError: If token generation fails
         """
+        if permissions is None:
+            permissions = []
+
         expire = expires_delta or timedelta(
             minutes=self.config.ACCESS_TOKEN_EXPIRE_MINUTES
         )
         log.debug(
-            "Creating access token for user_id={} with expiry={}", user_id, expire
+            "Creating access token for user_id={} with expiry={}, permissions={}, is_superadmin={}",
+            user_id,
+            expire,
+            permissions,
+            is_superadmin,
         )
 
         try:
-            token = self._create_token(data={"sub": str(user_id)}, expires_delta=expire)
+            data = {
+                "sub": str(user_id),
+                "permissions": permissions,
+                "is_superadmin": is_superadmin,
+            }
+            token = self._create_token(data=data, expires_delta=expire)
             log.success("Access token created successfully for user_id={}", user_id)
             return token
+
         except Exception as e:
             log.error(
                 "Failed to create access token for user_id={}: {}", user_id, str(e)

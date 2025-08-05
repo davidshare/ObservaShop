@@ -118,7 +118,9 @@ class AuthorizationError(AuthServiceError):
 class PermissionDeniedError(AuthorizationError):
     """User lacks required permissions."""
 
-    pass
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
 
 
 # ------------------------
@@ -155,3 +157,19 @@ class TooManyAttemptsError(RateLimitError):
     """Too many failed login attempts."""
 
     pass
+
+
+class UserValidationError(Exception):
+    """Could not validate that user exists"""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class ServiceUnavailableError(Exception):
+    """External service unavailable"""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
