@@ -644,7 +644,7 @@ async def create_permission(
 
 @router.get("/authz/permissions/{permission_id}", response_model=PermissionResponse)
 async def get_permission(
-    permission_id: int = Path(..., description="The ID of the permission to retrieve"),
+    permission_id: UUID = Path(..., description="The ID of the permission to retrieve"),
     session: Session = Depends(get_session),
     _: UUID = Depends(require_permission("read", "permission")),
 ):
