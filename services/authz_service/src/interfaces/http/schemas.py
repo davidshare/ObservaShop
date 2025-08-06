@@ -137,7 +137,7 @@ class PermissionResponse(BaseModel):
     Schema for returning permission data.
     """
 
-    id: int
+    id: UUID
     name: str
     description: Optional[str] = None
     created_at: datetime
@@ -163,7 +163,7 @@ class RolePermissionCreate(BaseModel):
     """
 
     role_id: UUID
-    permission_id: int
+    permission_id: UUID
 
     model_config = {"extra": "forbid"}
 
@@ -174,7 +174,7 @@ class RolePermissionResponse(BaseModel):
     """
 
     role_id: UUID
-    permission_id: int
+    permission_id: UUID
     assigned_at: datetime
 
     model_config = {"from_attributes": True}
