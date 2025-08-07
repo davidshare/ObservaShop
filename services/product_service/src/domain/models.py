@@ -9,6 +9,12 @@ from sqlmodel import Field, Relationship, SQLModel
 
 
 class Product(SQLModel, table=True):
+    """
+    Represents a product .g.
+
+    Schema: product
+    """
+
     __tablename__ = "products"
     __table_args__ = {"schema": "product"}
 
