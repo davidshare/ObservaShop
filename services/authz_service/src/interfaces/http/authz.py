@@ -42,6 +42,7 @@ from src.interfaces.http.schemas import (
     PermissionListResponse,
     RolePermissionCreate,
     RolePermissionResponse,
+    RolePermissionListResponse,
 )
 
 router = APIRouter(tags=["authz"])
@@ -934,13 +935,104 @@ async def assign_permission_to_role(
         ) from e
 
 
+@router.get(
+    "/authz/role-permissions/{role_id}", response_model=RolePermissionListResponse
+)
+async def get_role_permissions(
+    role_id: UUID = Path(
+        ..., description="The UUID of the role to retrieve permissions for"
+    ),
+    limit: int = 10,
+    offset: int = 0,
+    sort: str = "assigned_at:desc",
+    session: Session = Depends(get_session),
+    current_user_id: UUID = Depends(jwt_service.get_current_user_id),
+    _: UUID = Depends(require_permission("read", "role_permission")),
+):
+    """
+    Get all permissions assigned to a role.
+    - Requires: superadmin OR role_permission:read permission
+    - Supports sorting by assigned_at, permission_id
+    - Returns paginated list with meta
+    """
+    try:
+        log.info(
+            "Get role permissions request",
+            role_id=str(role_id),
+            requester_id=str(current_user_id),
+            limit=limit,
+            offset=offset,
+            sort=sort,
+        )
+
+        # Validate inputs
+        if limit < 1 or limit > 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="limit must be between 1 and 100",
+            )
+
+        allowed_sort_fields = ["assigned_at", "permission_id"]
+        sort_field, direction = sort.split(":") if ":" in sort else (sort, "asc")
+        if sort_field not in allowed_sort_fields:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid sort field: {sort_field}",
+            )
+        if direction not in ["asc", "desc"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid sort direction: {direction}",
+            )
+
+        role_permission_service = RolePermissionService(session=session)
+        role_permissions, total = role_permission_service.get_permissions_for_role(
+            role_id=role_id,
+            limit=limit,
+            offset=offset,
+            sort=f"{sort_field}:{direction}",
+        )
+
+        responses = [
+            RolePermissionResponse.model_validate(rp) for rp in role_permissions
+        ]
+
+        meta = {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "pages": (total + limit - 1) // limit,
+        }
+
+        log.info(
+            "Role permissions retrieved successfully",
+            role_id=str(role_id),
+            count=len(responses),
+        )
+        return RolePermissionListResponse(permissions=responses, meta=meta)
+
+    except RoleNotFoundError as e:
+        log.warning("Role not found", role_id=str(role_id))
+        raise HTTPException(status_code=404, detail="Role not found") from e
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        log.critical("Unexpected error during get role permissions", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        ) from e
+
+
 @router.delete(
     "/authz/role-permissions/{role_id}/{permission_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def remove_permission_from_role(
     role_id: UUID = Path(...),
-    permission_id: int = Path(...),
+    permission_id: UUID = Path(...),
     session: Session = Depends(get_session),
     _: UUID = Depends(require_permission("revoke", "role_permission")),
 ):

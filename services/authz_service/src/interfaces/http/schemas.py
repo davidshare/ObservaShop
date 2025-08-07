@@ -178,3 +178,14 @@ class RolePermissionResponse(BaseModel):
     assigned_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class RolePermissionListResponse(BaseModel):
+    """
+    Schema for paginated role permission list response.
+    """
+
+    permissions: List[RolePermissionResponse]
+    meta: dict
+
+    model_config = {"from_attributes": True}
