@@ -518,27 +518,30 @@ async def get_user_roles(
     limit: int = 10,
     offset: int = 0,
     session: Session = Depends(get_session),
-    current_user_id: UUID = Depends(jwt_service.get_current_user_id),
+    current_user_id_and_token: tuple[UUID, str] = Depends(
+        jwt_service.get_current_user_id
+    ),
     http_client: AsyncClient = Depends(lambda: AsyncClient(timeout=10.0)),
-    # ✅ CORRECT: Use require_permission only if not self
 ):
     """
     Get all roles assigned to a user.
     - User can view their own roles.
     - Admin can view any user's roles.
     """
+    current_user_id, raw_token = current_user_id_and_token  # ✅ Unpack here
+
     try:
         log.info(
             "Get user roles request",
             target_user_id=str(user_id),
-            requester_id=str(current_user_id),
+            requester_id=str(current_user_id),  # ✅ Now a UUID
         )
 
         # ✅ Self or admin check
         if current_user_id != user_id:
-            # Must have user_role:read permission
             authz_service = AuthorizationService(session=session)
-            allowed, _ = await authz_service.check_permission(
+            # ✅ Now passing UUID, not tuple
+            allowed, _ = authz_service.check_permission(
                 current_user_id, "read", "user_role"
             )
             if not allowed:
@@ -690,7 +693,7 @@ async def get_permission(
 @router.patch("/authz/permissions/{permission_id}", response_model=PermissionResponse)
 async def update_permission(
     permission_update: PermissionUpdate,
-    permission_id: int = Path(..., description="The ID of the permission to update"),
+    permission_id: UUID = Path(..., description="The ID of the permission to update"),
     session: Session = Depends(get_session),
     _: UUID = Depends(require_permission("update", "permission")),
 ):
@@ -749,7 +752,7 @@ async def update_permission(
     "/authz/permissions/{permission_id}", status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_permission(
-    permission_id: int = Path(..., description="The ID of the permission to delete"),
+    permission_id: UUID = Path(..., description="The ID of the permission to delete"),
     session: Session = Depends(get_session),
     _: UUID = Depends(require_permission("delete", "permission")),
 ):
