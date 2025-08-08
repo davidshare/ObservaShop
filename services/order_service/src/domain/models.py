@@ -1,11 +1,12 @@
-from sqlmodel import SQLModel, Field, Relationship, Column as SQLColumn
+from datetime import datetime
+from decimal import Decimal
 from typing import List
 from uuid import UUID, uuid4
-from decimal import Decimal
-from datetime import datetime
 
 import sqlalchemy.dialects.postgresql as pg
 from sqlalchemy import Column
+from sqlmodel import Column as SQLColumn
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class OrderItem(SQLModel, table=True):
