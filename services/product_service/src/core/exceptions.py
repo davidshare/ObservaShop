@@ -3,7 +3,7 @@ from typing import Optional
 
 class CategoryError(Exception):
     """
-    Base class for all authentication and authorization errors in the auth-service.
+    Base class for all Category errors in the product service.
     Should not be exposed directly to the client — convert to HTTPException.
     """
 
@@ -91,9 +91,37 @@ class InvalidInputError(CategoryError):
 
     pass
 
+
 class DatabaseError(CategoryError):
     """
     Raised when a there is a database error.
     """
+
+    pass
+
+
+###### Products
+
+
+class ProductError(Exception):
+    """
+    Base class for all product errors in the product service.
+    Should not be exposed directly to the client — convert to HTTPException.
+    """
+
+    def __init__(self, message: str, original_exception: Optional[Exception] = None):
+        super().__init__(message)
+        self.message = message
+        self.original_exception = original_exception
+
+
+class ProductNotFoundError(ProductError):
+    """Raised when a product with the given ID does not exist or is inactive."""
+
+    pass
+
+
+class ProductAlreadyExistsError(ProductError):
+    """Raised when trying to create a product with a name that already exists."""
 
     pass

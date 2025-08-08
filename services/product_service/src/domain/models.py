@@ -101,6 +101,11 @@ class Product(SQLModel, table=True):
         nullable=False,
         description="Available quantity in inventory",
     )
+    is_active: bool = Field(
+        default=True,
+        description="Whether the category is active and visible.",
+        nullable=True,
+    )
     category_id: UUID = Field(
         foreign_key="product.categories.id",
         nullable=False,

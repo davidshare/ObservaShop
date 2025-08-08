@@ -4,6 +4,7 @@ from src.config.logger_config import log
 from src.infrastructure.database.session import init_sqlmodel
 from src.infrastructure.services import redis_service
 from src.interfaces.http.category import router as category_router
+from src.interfaces.http.product import router as product_router
 
 
 @asynccontextmanager
@@ -59,3 +60,4 @@ async def health_check():
 
 
 app.include_router(category_router)
+app.include_router(product_router)
