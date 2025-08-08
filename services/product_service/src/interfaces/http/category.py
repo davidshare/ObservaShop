@@ -201,9 +201,8 @@ async def update_category(
             requester_id=str(current_user_id),
         )
 
-        update_data = category_update.model_dump(exclude_unset=True)
         category_service = CategoryService(session=session)
-        category = category_service.update_category(category_id, update_data)
+        category = category_service.update_category(category_id, category_update)
 
         return CategoryResponse.model_validate(category)
 
