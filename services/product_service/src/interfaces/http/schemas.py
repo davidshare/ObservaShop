@@ -47,7 +47,7 @@ class CategoryResponse(CategoryBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    parent: Optional["CategoryResponse"] = None
+    # parent: Optional["CategoryResponse"] = None
     children: List["CategoryResponse"] = []
     product_count: int = 0
 

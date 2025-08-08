@@ -71,29 +71,27 @@ class CategoryService:
             if not parent.is_active:
                 raise InvalidInputError("Cannot assign to an inactive parent category")
 
-            # Prevent cycle
-            if self._has_cycle(parent, parent_id):
-                raise InvalidInputError("Category hierarchy cycle detected")
-
-        # Create category
+        # Create the category object (in memory)
         category = Category(name=name, description=description, parent_id=parent_id)
+
         try:
             self.session.add(category)
             self.session.commit()
             self.session.refresh(category)
+
             log.info(
                 "Category created successfully",
-                category_id=str(category.id),
+                category_id=str(category.id),  # ✅ Now available
                 name=category.name,
             )
             return category
+
         except Exception as e:
             log.exception(
                 "Unexpected error during category creation",
                 name=name,
                 parent_id=str(parent_id),
                 error=str(e),
-                exc_info=True,
             )
             raise DatabaseError(
                 "Failed to create category due to internal error"
@@ -197,10 +195,8 @@ class CategoryService:
         if "name" in update_data:
             new_name = update_data["name"].strip()
             if new_name == category.name:
-                # No change, skip
                 del update_data["name"]
             else:
-                # Check for duplicate name
                 existing = self.session.exec(
                     select(Category).where(Category.name == new_name)
                 ).first()
@@ -241,18 +237,19 @@ class CategoryService:
                         "Cannot assign to an inactive parent category"
                     )
 
-                # PREVENT CYCLE: Ensure the new parent does not create a cycle
-                if self._has_cycle(parent, category_id):
+                # PREVENT CYCLE: Check if the new parent would create a cycle
+                # `category.id` is the ID of the category being updated
+                # `parent` is the proposed new parent
+                if self._has_cycle(parent, category.id):
                     log.warning(
                         "Cycle detected in category hierarchy",
-                        category_id=str(category_id),
+                        category_id=str(category.id),
                         parent_id=str(parent_id),
                     )
                     raise InvalidInputError("Category hierarchy cycle detected")
 
                 category.parent_id = parent_id
 
-        # Update timestamp
         category.updated_at = datetime.utcnow()
 
         try:
@@ -267,7 +264,6 @@ class CategoryService:
                 "Unexpected error during category update",
                 category_id=str(category.id),
                 error=str(e),
-                exc_info=True,
             )
             raise DatabaseError(
                 "Failed to update category due to internal error"
@@ -291,7 +287,8 @@ class CategoryService:
 
     def _has_cycle(self, parent: Category, target_id: UUID) -> bool:
         """
-        Check if adding a parent would create a cycle in the hierarchy.
+        Check if the target category (target_id) appears in the parent's ancestry.
+        If yes → adding it as a child would create a cycle → block it.
         """
         current = parent
         while current:
