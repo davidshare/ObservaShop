@@ -1,9 +1,9 @@
 from typing import Optional
 
 
-class AuthorizationError(Exception):
+class CategoryError(Exception):
     """
-    Raised when an authorization check fails due to internal error or misconfiguration.
+    Base class for all authentication and authorization errors in the auth-service.
     Should not be exposed directly to the client — convert to HTTPException.
     """
 
@@ -16,7 +16,7 @@ class AuthorizationError(Exception):
 # ------------------------
 # Token-related errors
 # ------------------------
-class TokenError(AuthorizationError):
+class TokenError(CategoryError):
     """Base class for token-related failures."""
 
     pass
@@ -48,5 +48,52 @@ class TokenStorageError(TokenError):
 
 class TokenPersistenceError(TokenStorageError):
     """Raised when Redis write fails (network, timeout, etc.)."""
+
+    pass
+
+
+# ------------------------
+# Category-related errors
+# ------------------------
+
+
+class CategoryNotFoundError(CategoryError):
+    """
+    Raised when a category with the given ID or name does not exist.
+    Used in category_service when a category is not found in the database.
+    """
+
+    pass
+
+
+class CategoryAlreadyExistsError(CategoryError):
+    """
+    Raised when trying to create a category with a name that already exists.
+    Prevents duplicate category names.
+    """
+
+    pass
+
+
+class CategoryHierarchyError(CategoryError):
+    """
+    Raised when a category hierarchy operation would create a cycle (e.g., a parent becomes its own descendant).
+    Indicates invalid input or attempted self-reference.
+    """
+
+    pass
+
+
+class InvalidInputError(CategoryError):
+    """
+    Raised when a invalid input is passed.
+    """
+
+    pass
+
+class DatabaseError(CategoryError):
+    """
+    Raised when a there is a database error.
+    """
 
     pass

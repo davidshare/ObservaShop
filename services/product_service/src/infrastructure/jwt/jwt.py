@@ -121,7 +121,7 @@ class JWTService:
             raise TokenInvalidError(f"Invalid token: {str(e)}") from e
 
         except Exception as e:
-            log.critical("Unexpected error during token verification", error=str(e))
+            log.exception("Unexpected error during token verification", error=str(e))
             raise TokenInvalidError("Internal token validation error") from e
 
     def get_current_user_id(
@@ -215,10 +215,48 @@ class JWTService:
             raise
 
         except Exception as e:
-            log.critical(
+            log.exception(
                 "Unexpected error during authentication", error=str(e), exc_info=True
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Internal authentication error",
             ) from e
+
+    def get_current_user_id_with_claims(
+        self, token: str = Depends(oauth2_scheme)
+    ) -> tuple[UUID, dict]:
+        """
+        Extract user_id and authorization claims from JWT.
+        Returns both for permission checks.
+        """
+        try:
+            payload = self.verify_token(token)
+            user_id_str = payload.get("sub")
+            if not user_id_str:
+                raise TokenMissingClaimError("Token is missing 'sub' claim")
+            user_id = UUID(user_id_str)
+
+            claims = {
+                "permissions": payload.get("permissions", []),
+                "is_superadmin": payload.get("is_superadmin", False),
+            }
+            return user_id, claims
+
+        except TokenExpiredError as e:
+            log.info("Authentication failed: token has expired")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            ) from e
+        except TokenInvalidError as e:
+            log.info("Authentication failed: invalid or malformed token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token",
+                headers={"WWW-Authenticate": "Bearer"},
+            ) from e
+        except Exception as e:
+            log.exception("Unexpected error", exc_info=True)
+            raise HTTPException(500, "Internal authentication error") from e

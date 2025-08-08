@@ -57,7 +57,7 @@ class RedisService:
                 redis_db=config.REDIS_DB,
             )
         except Exception as e:
-            log.critical(
+            log.exception(
                 "Failed to connect to Redis",
                 redis_host=config.REDIS_HOST,
                 redis_port=config.REDIS_PORT,
@@ -202,7 +202,7 @@ class RedisService:
             return None
 
         except Exception as e:
-            log.critical(
+            log.exception(
                 "Unexpected error retrieving user permissions",
                 user_id=str(user_id),
                 error=str(e),

@@ -33,7 +33,7 @@ def init_sqlmodel() -> None:
             conn.execute(text("SELECT 1"))
         log.info("SQLModel engine initialized and connection verified")
     except Exception as e:
-        log.critical(
+        log.exception(
             "Failed to initialize SQLModel engine", error=str(e), exc_info=True
         )
         raise RuntimeError("Failed to initialize database engine") from e
@@ -51,7 +51,7 @@ def get_session() -> Generator[Session, None, None]:
         RuntimeError: If engine is not initialized.
     """
     if engine is None:
-        log.critical("Database session requested, but engine is not initialized")
+        log.exception("Database session requested, but engine is not initialized")
         raise RuntimeError(
             "Database engine not initialized. Call init_sqlmodel() first."
         )

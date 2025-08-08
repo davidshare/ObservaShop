@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -53,6 +53,16 @@ class CategoryResponse(CategoryBase):
 
     class Config:
         from_attributes = True
+
+
+class CategoryListResponse(BaseModel):
+    """
+    Response model for returning a paginated list of categories.
+    Includes the list of categories and metadata for pagination.
+    """
+
+    categories: List[CategoryResponse]
+    meta: Dict[str, Any]
 
 
 # Fix forward references

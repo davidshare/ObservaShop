@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from src.config.logger_config import log
 from src.infrastructure.database.session import init_sqlmodel
 from src.infrastructure.services import redis_service
-# from src.interfaces.http.authz import router as authz_router
+from src.interfaces.http.category import router as category_router
 
 
 @asynccontextmanager
@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
         await redis_service.connect()
         log.info("Redis connected")
     except Exception as e:
-        log.critical("Failed to initialize dependencies", error=str(e), exc_info=True)
+        log.exception("Failed to initialize dependencies", error=str(e), exc_info=True)
         raise
 
     yield
@@ -58,4 +58,4 @@ async def health_check():
     }
 
 
-# app.include_router(authz_router)
+app.include_router(category_router)
