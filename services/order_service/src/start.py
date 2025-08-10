@@ -10,7 +10,7 @@ def run_migrations():
 
 if __name__ == "__main__":
     APP_HOST = "0.0.0.0"
-    APP_PORT = 8013
+    APP_PORT = 8003
     run_migrations()
     log.info("Starting order-service on {}:{}", APP_HOST, APP_PORT)
-    uvicorn.run(app, host="0.0.0.0", port=8004)
+    uvicorn.run(app, host="0.0.0.0", port=APP_PORT)
