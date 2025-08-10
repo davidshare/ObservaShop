@@ -12,5 +12,5 @@ if __name__ == "__main__":
     APP_HOST = "0.0.0.0"
     APP_PORT = 8013
     run_migrations()
-    log.info("Starting authz-service on {}:{}", APP_HOST, APP_PORT)
-    uvicorn.run(app, host="0.0.0.0", port=8013)
+    log.info("Starting order-service on {}:{}", APP_HOST, APP_PORT)
+    uvicorn.run(app, host="0.0.0.0", port=8004)

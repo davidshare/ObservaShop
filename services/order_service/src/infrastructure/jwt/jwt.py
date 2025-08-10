@@ -1,7 +1,7 @@
 """
 JWT Service Module
 
-Provides secure, observable, and dependency-injectable JWT validation for the authz-service.
+Provides secure, observable, and dependency-injectable JWT validation for the order-service.
 Uses the shared JWT_SECRET to verify tokens issued by auth-service, ensuring zero-trust
 between microservices. Does NOT call auth-service for validation — all checks are local.
 

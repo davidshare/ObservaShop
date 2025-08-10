@@ -1,5 +1,5 @@
 """
-Centralized service instances for the authz-service.
+Centralized service instances for the order-service.
 Ensures single, shared instances of RedisService, JWTService, etc.
 """
 
