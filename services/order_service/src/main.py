@@ -12,7 +12,7 @@ async def lifespan(app: FastAPI):
     FastAPI lifespan handler: runs on startup and shutdown.
     Initializes database engine and Redis connection.
     """
-    log.info("Starting authz-service initialization")
+    log.info("Starting order-service initialization")
 
     # Startup
     try:
@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     await redis_service.close()
-    log.info("authz-service shutdown complete")
+    log.info("order-service shutdown complete")
 
 
 app = FastAPI(
