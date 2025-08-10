@@ -8,7 +8,7 @@ from src.config.logger_config import log
 class RedisService:
     """
     RedisService provides a secure, observable, and dependency-injectable interface
-    for managing refresh tokens and session state in the authz-service.
+    for managing refresh tokens and session state in the product-service.
 
     This service uses Redis to:
     - Cache user permission sets with superadmin flag
