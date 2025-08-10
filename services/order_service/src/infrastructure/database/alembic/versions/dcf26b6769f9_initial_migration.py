@@ -1,20 +1,20 @@
-"""Initial schema
+"""initial migration
 
-Revision ID: e878a73fd63e
+Revision ID: dcf26b6769f9
 Revises:
-Create Date: 2025-07-22 14:45:16.802791
+Create Date: 2025-08-09 16:28:22.222625
 
 """
 
 from typing import Sequence, Union
 
 from alembic import op
-import sqlmodel
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+import sqlmodel
 
 # revision identifiers, used by Alembic.
-revision: str = "e878a73fd63e"
+revision: str = "dcf26b6769f9"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,7 +27,7 @@ def upgrade() -> None:
         "orders",
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("user_id", sa.Uuid(), nullable=False),
-        sa.Column("total", sa.NUMERIC(precision=10, scale=2), nullable=False),
+        sa.Column("total_amount", sa.NUMERIC(precision=10, scale=2), nullable=False),
         sa.Column(
             "status", sqlmodel.sql.sqltypes.AutoString(length=20), nullable=False
         ),
@@ -48,7 +48,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "order_items",
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("order_id", sa.Uuid(), nullable=False),
         sa.Column("product_id", sa.Uuid(), nullable=False),
         sa.Column("quantity", sa.Integer(), nullable=False),
@@ -58,6 +58,13 @@ def upgrade() -> None:
             ["orders.orders.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
+        schema="orders",
+    )
+    op.create_index(
+        op.f("ix_orders_order_items_id"),
+        "order_items",
+        ["id"],
+        unique=False,
         schema="orders",
     )
     op.create_index(
@@ -89,6 +96,9 @@ def downgrade() -> None:
         op.f("ix_orders_order_items_order_id"),
         table_name="order_items",
         schema="orders",
+    )
+    op.drop_index(
+        op.f("ix_orders_order_items_id"), table_name="order_items", schema="orders"
     )
     op.drop_table("order_items", schema="orders")
     op.drop_index(

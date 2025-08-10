@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from src.config.logger_config import log
 from src.infrastructure.database.session import init_sqlmodel
 from src.infrastructure.services import redis_service
+from src.interfaces.http.order import router as order_router
 
 
 @asynccontextmanager
@@ -48,7 +49,7 @@ def read_root():
 async def health_check():
     """Health check endpoint for liveness probe."""
     db_healthy = True  # Assume engine initialized
-    redis_healthy = await redis_service.ping()  # ✅ Use public method
+    redis_healthy = await redis_service.ping() 
 
     return {
         "status": "healthy" if db_healthy and redis_healthy else "unhealthy",
@@ -57,4 +58,4 @@ async def health_check():
     }
 
 
-# app.include_router(category_router)
+app.include_router(order_router)

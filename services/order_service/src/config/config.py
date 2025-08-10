@@ -36,6 +36,8 @@ class Config(BaseSettings):
 
     # Shared config
     INTERNAL_SHARED_SECRET: str
+    PRODUCT_SERVICE_URL: str
+    PAYMENT_SERVICE_URL: str
 
     @property
     def DATABASE_URL(self) -> str:

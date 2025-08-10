@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 import sqlalchemy.dialects.postgresql as pg
@@ -13,7 +13,15 @@ class OrderItem(SQLModel, table=True):
     __tablename__ = "order_items"
     __table_args__ = {"schema": "orders"}
 
-    id: int = Field(default=None, primary_key=True)
+    id: UUID = Field(
+        sa_column=SQLColumn(
+            pg.UUID(as_uuid=True),
+            primary_key=True,
+            default=uuid4,
+            index=True,
+            nullable=False,
+        )
+    )
 
     order_id: UUID = Field(
         foreign_key="orders.orders.id",
@@ -34,6 +42,8 @@ class OrderItem(SQLModel, table=True):
         description="Price at time of purchase",
     )
 
+    order: Optional["Order"] = Relationship(back_populates="items")
+
 
 class Order(SQLModel, table=True):
     __tablename__ = "orders"
@@ -53,7 +63,7 @@ class Order(SQLModel, table=True):
         index=True, nullable=False, description="Logical reference to auth.users.id"
     )
 
-    total: Decimal = Field(
+    total_amount: Decimal = Field(
         sa_column=Column(pg.NUMERIC(10, 2), nullable=False),
         description="Total amount of the order",
     )

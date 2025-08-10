@@ -1,22 +1,43 @@
-from typing import Optional, Dict, Any
+import json
+from typing import Any, Dict, Optional
 from uuid import UUID
+
 from redis.asyncio import Redis as AsyncRedis
+
 from src.config.config import config
 from src.config.logger_config import log
+from src.core.exceptions import (
+    RedisConnectionError,
+    RedisDeserializationError,
+    RedisInitializationError,
+    RedisOperationError,
+    RedisSerializationError,
+    RedisConnectionCloseError,
+    RedisPingError,
+    RedisCacheInvalidationError,
+)
 
 
 class RedisService:
     """
     RedisService provides a secure, observable, and dependency-injectable interface
-    for managing refresh tokens and session state in the authz-service.
+    for caching product and order data in the order-service.
 
     This service uses Redis to:
-    - Cache user permission sets with superadmin flag
-    - Support fast authorization checks
-    - Prevent service disruption on Redis failure (fail-soft)
+    - Cache product details from product-service (reducing latency and load)
+    - Cache order responses for fast reads (e.g., admin dashboards)
+    - Support fast read operations with TTL-based invalidation
+    - Fail-soft: if Redis is down, fall back to direct database/service calls
 
     The service is designed for use with FastAPI's dependency injection system
     and integrates with loguru for structured logging.
+
+    Example usage:
+        redis = RedisService()
+        await redis.connect()
+        await redis.set_product(product_id, product_data)
+        data = await redis.get_product(product_id)
+        await redis.close()
     """
 
     def __init__(self) -> None:
@@ -31,7 +52,7 @@ class RedisService:
         Establish a connection to the Redis server using configuration from `config`.
 
         Raises:
-            RuntimeError: If connection fails after configuration validation.
+            RedisConnectionError: If connection fails after configuration validation.
         """
         if self._client is not None:
             log.warning(
@@ -44,8 +65,7 @@ class RedisService:
                 host=config.REDIS_HOST,
                 port=config.REDIS_PORT,
                 db=config.REDIS_DB,
-                decode_responses=True,
-                encoding="utf-8",
+                decode_responses=False,  # Keep binary for performance
                 socket_connect_timeout=5,
                 socket_timeout=5,
             )
@@ -56,15 +76,27 @@ class RedisService:
                 redis_port=config.REDIS_PORT,
                 redis_db=config.REDIS_DB,
             )
-        except Exception as e:
+        except (ConnectionError, TimeoutError) as e:
             log.exception(
-                "Failed to connect to Redis",
+                "Failed to connect to Redis: connection or timeout error",
                 redis_host=config.REDIS_HOST,
                 redis_port=config.REDIS_PORT,
                 error=str(e),
             )
-            raise RuntimeError(
-                "Unable to connect to Redis. Check host, port, and network."
+            raise RedisConnectionError(
+                f"Unable to connect to Redis at {config.REDIS_HOST}:{config.REDIS_PORT}. "
+                "Check host, port, network, and firewall settings."
+            ) from e
+        except Exception as e:
+            log.exception(
+                "Failed to connect to Redis: unexpected error",
+                redis_host=config.REDIS_HOST,
+                redis_port=config.REDIS_PORT,
+                error=str(e),
+            )
+            raise RedisInitializationError(
+                "Unexpected error during Redis initialization. "
+                "Check Redis server status and configuration."
             ) from e
 
     async def close(self) -> None:
@@ -72,6 +104,7 @@ class RedisService:
         Safely close the Redis connection.
 
         Logs the closure and sets client to None.
+        Does not raise exceptions to avoid blocking shutdown.
         """
         if self._client is None:
             log.debug("RedisService.close() called, but no active connection")
@@ -80,7 +113,7 @@ class RedisService:
         try:
             await self._client.close()
             log.info("Redis connection closed gracefully")
-        except Exception as e:
+        except RedisConnectionCloseError as e:
             log.error("Error during Redis connection close", error=str(e))
         finally:
             self._client = None
@@ -97,7 +130,7 @@ class RedisService:
         try:
             await self._client.ping()
             return True
-        except Exception:
+        except RedisPingError:
             return False
 
     async def is_connected(self) -> bool:
@@ -109,104 +142,269 @@ class RedisService:
         """
         return self._client is not None
 
-    async def set_user_permissions(
-        self, user_id: UUID, data: Dict[str, Any], ttl: int = None
+    async def set_product(
+        self, product_id: UUID, data: Dict[str, Any], ttl: int = None
     ) -> None:
         """
-        Cache a user's full permission set and superadmin status in Redis.
-        Data should be: {"permissions": set[str], "is_superadmin": bool}
+        Cache product data retrieved from product-service.
+        Data should be the full product response (id, name, price, stock, etc.)
+
+        Args:
+            product_id: UUID of the product to cache.
+            data: Product data to store in Redis.
+            ttl: Time-to-live in seconds. Uses default if None.
+
+        Raises:
+            RedisConnectionError: If Redis is unreachable.
+            RedisSerializationError: If data cannot be serialized.
         """
         if self._client is None:
-            log.error("Cannot set user permissions: Redis client not connected")
-            # Fail-soft: do not raise, just return
-            return
+            log.warning("Cannot set product cache: Redis client not connected")
+            return  # Fail-soft
 
-        actual_ttl = ttl if ttl is not None else config.REDIS_TTL
-        key = f"permissions:{user_id}"
+        actual_ttl = ttl if ttl is not None else 300  # Default 5 minutes
+        key = f"product:{product_id}"
 
         try:
-            import json
-
-            value = json.dumps(
-                {
-                    "permissions": list(data.get("permissions", [])),
-                    "is_superadmin": data.get("is_superadmin", False),
-                }
-            )
+            value = json.dumps(data)
             await self._client.setex(key, actual_ttl, value)
-            log.info(
-                "User permissions cached",
-                user_id=str(user_id),
-                permission_count=len(data.get("permissions", [])),
-                is_superadmin=data.get("is_superadmin", False),
-                ttl=actual_ttl,
-            )
+            log.info("Product cached", product_id=str(product_id), ttl=actual_ttl)
         except (ConnectionError, TimeoutError) as e:
             log.warning(
-                "Failed to cache user permissions due to connectivity issue",
-                user_id=str(user_id),
+                "Failed to cache product due to connectivity issue",
+                product_id=str(product_id),
                 error=str(e),
             )
             # Fail-soft: do not raise
             return
+        except (TypeError, ValueError) as e:
+            log.error(
+                "Failed to serialize product data",
+                product_id=str(product_id),
+                error=str(e),
+            )
+            raise RedisSerializationError(
+                f"Failed to serialize product {product_id} for Redis storage."
+            ) from e
         except Exception as e:
             log.error(
-                "Unexpected error caching user permissions",
-                user_id=str(user_id),
+                "Unexpected error caching product",
+                product_id=str(product_id),
                 error=str(e),
             )
-            # Fail-soft: do not raise
-            return
+            raise RedisOperationError(
+                f"Unexpected error during Redis SET operation for product {product_id}."
+            ) from e
 
-    async def get_user_permissions(self, user_id: UUID) -> Optional[Dict[str, Any]]:
+    async def get_product(self, product_id: UUID) -> Optional[Dict[str, Any]]:
         """
-        Retrieve cached permissions and superadmin status for a user.
-        Returns a dict: {"permissions": set[str], "is_superadmin": bool}
-        Returns None if not found, expired, or Redis is unavailable.
+        Retrieve cached product data.
+        Returns the product dict or None if not found, expired, or Redis is unavailable.
+
+        Args:
+            product_id: UUID of the product to retrieve.
+
+        Returns:
+            Product data dict or None if not found or Redis unavailable.
+
+        Raises:
+            RedisConnectionError: If Redis is unreachable.
+            RedisDeserializationError: If cached data is corrupted.
         """
         if self._client is None:
-            log.warning("Cannot get user permissions: Redis client not connected")
-            # Fail-soft: return None, fallback to DB
+            log.warning("Cannot get product from cache: Redis client not connected")
             return None
 
-        key = f"permissions:{user_id}"
-
+        key = f"product:{product_id}"
         try:
             value = await self._client.get(key)
             if value is None:
-                log.debug("Permission cache miss", user_id=str(user_id))
+                log.debug("Product cache miss", product_id=str(product_id))
                 return None
 
-            import json
-
             data = json.loads(value)
-            result = {
-                "permissions": set(data.get("permissions", [])),
-                "is_superadmin": data.get("is_superadmin", False),
-            }
-            log.info(
-                "Permission cache hit",
-                user_id=str(user_id),
-                permission_count=len(result["permissions"]),
-                is_superadmin=result["is_superadmin"],
-            )
-            return result
-
+            log.info("Product cache hit", product_id=str(product_id))
+            return data
         except (ConnectionError, TimeoutError) as e:
             log.warning(
-                "Redis connectivity failed during permission lookup",
-                user_id=str(user_id),
+                "Redis connectivity failed during product lookup",
+                product_id=str(product_id),
                 error=str(e),
             )
-            # Fail-soft: return None, fallback to DB
             return None
-
+        except (json.JSONDecodeError, TypeError) as e:
+            log.error(
+                "Corrupted product data in Redis",
+                product_id=str(product_id),
+                error=str(e),
+            )
+            raise RedisDeserializationError(
+                f"Corrupted data for product {product_id} in Redis cache."
+            ) from e
         except Exception as e:
             log.exception(
-                "Unexpected error retrieving user permissions",
-                user_id=str(user_id),
+                "Unexpected error retrieving product from cache",
+                product_id=str(product_id),
                 error=str(e),
-                exc_info=True,
             )
-            # Fail-soft: never let Redis failure block authorization
+            raise RedisOperationError(
+                f"Unexpected error during Redis GET operation for product {product_id}."
+            ) from e
+
+    async def set_order(
+        self, order_id: UUID, data: Dict[str, Any], ttl: int = None
+    ) -> None:
+        """
+        Cache order response data.
+        Useful for admin dashboards or frequently accessed orders.
+
+        Args:
+            order_id: UUID of the order to cache.
+            data: Order data to store.
+            ttl: Time-to-live in seconds.
+
+        Raises:
+            RedisConnectionError: If Redis is unreachable.
+            RedisSerializationError: If data cannot be serialized.
+        """
+        if self._client is None:
+            log.warning("Cannot set order cache: Redis client not connected")
+            return
+
+        actual_ttl = ttl if ttl is not None else 600  # Default 10 minutes
+        key = f"order:{order_id}"
+
+        try:
+            value = json.dumps(data)
+            await self._client.setex(key, actual_ttl, value)
+            log.info("Order cached", order_id=str(order_id), ttl=actual_ttl)
+        except (ConnectionError, TimeoutError) as e:
+            log.warning(
+                "Failed to cache order due to connectivity issue",
+                order_id=str(order_id),
+                error=str(e),
+            )
+            return
+        except (TypeError, ValueError) as e:
+            log.error(
+                "Failed to serialize order data",
+                order_id=str(order_id),
+                error=str(e),
+            )
+            raise RedisSerializationError(
+                f"Failed to serialize order {order_id} for Redis storage."
+            ) from e
+        except Exception as e:
+            log.error(
+                "Unexpected error caching order",
+                order_id=str(order_id),
+                error=str(e),
+            )
+            raise RedisOperationError(
+                f"Unexpected error during Redis SET operation for order {order_id}."
+            ) from e
+
+    async def get_order(self, order_id: UUID) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve cached order data.
+        Returns the order dict or None if not found, expired, or Redis is unavailable.
+
+        Args:
+            order_id: UUID of the order to retrieve.
+
+        Returns:
+            Order data dict or None if not found or Redis unavailable.
+
+        Raises:
+            RedisConnectionError: If Redis is unreachable.
+            RedisDeserializationError: If cached data is corrupted.
+        """
+        if self._client is None:
+            log.warning("Cannot get order from cache: Redis client not connected")
             return None
+
+        key = f"order:{order_id}"
+        try:
+            value = await self._client.get(key)
+            if value is None:
+                log.debug("Order cache miss", order_id=str(order_id))
+                return None
+
+            data = json.loads(value)
+            log.info("Order cache hit", order_id=str(order_id))
+            return data
+        except (ConnectionError, TimeoutError) as e:
+            log.warning(
+                "Redis connectivity failed during order lookup",
+                order_id=str(order_id),
+                error=str(e),
+            )
+            return None
+        except (json.JSONDecodeError, TypeError) as e:
+            log.error(
+                "Corrupted order data in Redis",
+                order_id=str(order_id),
+                error=str(e),
+            )
+            raise RedisDeserializationError(
+                f"Corrupted data for order {order_id} in Redis cache."
+            ) from e
+        except Exception as e:
+            log.exception(
+                "Unexpected error retrieving order from cache",
+                order_id=str(order_id),
+                error=str(e),
+            )
+            raise RedisOperationError(
+                f"Unexpected error during Redis GET operation for order {order_id}."
+            ) from e
+
+    async def invalidate_product(self, product_id: UUID) -> None:
+        """
+        Invalidate the cache for a specific product (e.g., after stock update).
+        Safe to call even if key doesn't exist.
+
+        Args:
+            product_id: UUID of the product to invalidate.
+        """
+        if self._client is None:
+            return
+        key = f"product:{product_id}"
+        try:
+            deleted_count = await self._client.delete(key)
+            if deleted_count > 0:
+                log.info("Product cache invalidated", product_id=str(product_id))
+            else:
+                log.debug(
+                    "No product cache found to invalidate", product_id=str(product_id)
+                )
+        except RedisCacheInvalidationError as e:
+            log.warning(
+                "Failed to invalidate product cache",
+                product_id=str(product_id),
+                error=str(e),
+            )
+
+    async def invalidate_order(self, order_id: UUID) -> None:
+        """
+        Invalidate the cache for a specific order (e.g., after status update).
+        Safe to call even if key doesn't exist.
+
+        Args:
+            order_id: UUID of the order to invalidate.
+        """
+        if self._client is None:
+            return
+        key = f"order:{order_id}"
+        try:
+            deleted_count = await self._client.delete(key)
+            if deleted_count > 0:
+                log.info("Order cache invalidated", order_id=str(order_id))
+            else:
+                log.debug("No order cache found to invalidate", order_id=str(order_id))
+        except RedisCacheInvalidationError as e:
+            log.warning(
+                "Failed to invalidate order cache",
+                order_id=str(order_id),
+                error=str(e),
+            )
