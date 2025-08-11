@@ -77,6 +77,15 @@ class OrderNotFoundError(PaymentError):
     pass
 
 
+class OrderStatusTransitionError(PaymentError):
+    """
+    Raised when an order with the given ID does not exist
+    or the user is not authorized to access it.
+    """
+
+    pass
+
+
 class PaymentProcessingError(Exception):
     """
     Raised when payment service fails to process a payment.
@@ -86,7 +95,32 @@ class PaymentProcessingError(Exception):
     pass
 
 
+class PaymentNotFoundError(PaymentError):
+    """Raised when a payment with the given ID does not exist or the user is not authorized to access it."""
+
+    pass
+
+
+class PaymentAlreadyExistsError(PaymentError):
+    """Raised when trying to create a payment that already exists (e.g., duplicate idempotency key)."""
+
+    pass
+
+
+class IdempotencyError(PaymentError):
+    """Raised when an idempotency key is reused for a different request."""
+
+    pass
+
+
+class InsufficientStockError(PaymentError):
+    """Raised when a product stock is insufficient."""
+
+    pass
+
+
 ### Redis errors
+
 
 class RedisConnectionError(Exception):
     """Raised when the service cannot connect to the Redis server."""
@@ -134,3 +168,15 @@ class RedisCacheInvalidationError(Exception):
     """Raised when cached data cannot be invalidated."""
 
     pass
+
+
+class ExternalServiceError(Exception):
+    """Raised when a downstream service (e.g., order-service, Kafka) is unreachable."""
+
+    def __init__(
+        self, service_name: str, message: str, original_exception: Exception = None
+    ):
+        super().__init__(f"{service_name} error: {message}")
+        self.service_name = service_name
+        self.message = message
+        self.original_exception = original_exception
