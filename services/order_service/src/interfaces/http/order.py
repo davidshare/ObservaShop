@@ -264,6 +264,7 @@ async def update_order_status(
     user_id_and_claims: tuple[UUID, dict] = Depends(
         jwt_service.get_current_user_id_with_claims
     ),
+    user_id_and_token: tuple[UUID, str] = Depends(jwt_service.get_current_user_id),
     _: UUID = Depends(require_permission("update", "order")),
     claims: dict = Depends(jwt_service.get_current_user_id_with_claims),
     product_client: ProductClient = Depends(get_product_client),
@@ -279,6 +280,8 @@ async def update_order_status(
     current_user_id, claims = user_id_and_claims
     is_superadmin = claims.get("is_superadmin", False)
     permissions = set(claims.get("permissions", []))
+    _, raw_token = user_id_and_token
+
 
     try:
         log.info(
@@ -313,6 +316,7 @@ async def update_order_status(
             current_user_id,
             permissions=permissions,
             is_superadmin=is_superadmin,
+            jwt_token=raw_token,
         )
 
         return OrderResponse.model_validate(order)

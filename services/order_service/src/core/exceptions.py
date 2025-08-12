@@ -131,6 +131,12 @@ class PaymentProcessingError(Exception):
     pass
 
 
+class IdempotencyError(OrderError):
+    """Raised when an idempotency key is reused for a different request."""
+
+    pass
+
+
 class ExternalServiceError(Exception):
     """
     Raised when a downstream service (e.g., product-service, payment-service) is unreachable or returns an error.

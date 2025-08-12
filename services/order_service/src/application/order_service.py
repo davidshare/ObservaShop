@@ -16,6 +16,7 @@ from src.core.exceptions import (
     ExternalServiceError,
     DatabaseError,
     InvalidInputError,
+    IdempotencyError,
 )
 from src.domain.models import Order, OrderItem
 from src.interfaces.http.schemas import OrderCreate, OrderUpdate
@@ -66,6 +67,100 @@ class OrderService:
                 raise InvalidInputError(
                     f"Quantity for product {item.product_id} must be greater than zero"
                 )
+
+    async def _get_authorized_order(
+        self,
+        order_id: UUID,
+        user_id: UUID,
+        permissions: set[str],
+        is_superadmin: bool,
+    ) -> Order:
+        """Retrieve order with authorization checks."""
+        try:
+            return self.get_order_by_id(order_id, user_id, permissions, is_superadmin)
+        except OrderNotFoundError:
+            log.warning("Order not found or unauthorized", order_id=str(order_id))
+            raise
+
+    async def _ensure_can_update(
+        self,
+        order: Order,
+        user_id: UUID,
+        permissions: set[str],
+        is_superadmin: bool,
+    ):
+        """Check if user has permission to update this order."""
+        can_update = (
+            is_superadmin
+            or "order:update:all" in permissions
+            or (order.user_id == user_id and "order:update" in permissions)
+        )
+        if not can_update:
+            log.warning("User not authorized to update order", order_id=str(order.id))
+            raise OrderNotFoundError(f"Order with ID {order.id} not found")
+
+    def _validate_status_transition(self, current_status: str, new_status: str):
+        """Validate allowed state transitions."""
+        valid_transitions = {
+            "pending": ["confirmed", "cancelled"],
+            "confirmed": ["shipped", "cancelled"],
+            "shipped": ["delivered"],
+            "delivered": [],
+            "cancelled": [],
+        }
+        if new_status not in valid_transitions.get(current_status, []):
+            raise OrderStatusTransitionError(
+                f"Cannot transition order from '{current_status}' to '{new_status}'"
+            )
+
+    async def _process_payment_for_confirmation(self, order: Order, auth_token: str):
+        """Process payment when confirming a pending order."""
+        log.info("Processing payment for order confirmation", order_id=str(order.id))
+
+        idempotency_key = f"order:{order.id}:confirm"
+
+        try:
+            await self.payment_client.create_payment(
+                order_id=order.id,
+                amount=order.total_amount,
+                currency="USD",
+                payment_method="mock",
+                idempotency_key=idempotency_key,
+                auth_token=auth_token,
+            )
+            log.info("Payment processed successfully", order_id=str(order.id))
+        except (IdempotencyError, PaymentProcessingError) as e:
+            log.warning("Payment failed during order confirmation", error=str(e))
+            raise PaymentProcessingError("Payment failed: cannot confirm order") from e
+        except ExternalServiceError as e:
+            log.critical("Payment service unreachable", error=str(e))
+            raise
+        except Exception as e:
+            log.critical("Unexpected error during payment processing", error=str(e))
+            raise PaymentProcessingError("Payment processing failed") from e
+
+    async def _update_and_save_order(self, order: Order, new_status: str) -> Order:
+        """Update order status and save to database."""
+        order.status = new_status
+        order.updated_at = datetime.utcnow()
+
+        try:
+            self.session.add(order)
+            self.session.commit()
+            self.session.refresh(order)
+            log.info(
+                "Order status updated successfully",
+                order_id=str(order.id),
+                status=new_status,
+            )
+            return order
+        except Exception as e:
+            log.critical(
+                "Unexpected error during order update",
+                order_id=str(order.id),
+                error=str(e),
+            )
+            raise DatabaseError("Failed to update order due to internal error") from e
 
     async def create_order(
         self, user_id: UUID, order_create: OrderCreate, jwt_token: str
@@ -286,6 +381,7 @@ class OrderService:
         user_id: UUID,
         permissions: set[str],
         is_superadmin: bool,
+        jwt_token: str,
     ) -> Order:
         """
         Update the status of an existing order.
@@ -308,17 +404,18 @@ class OrderService:
             user_id=str(user_id),
         )
 
-        order = self.get_order_by_id(order_id, user_id, permissions, is_superadmin)
-
-        can_update = (
-            is_superadmin
-            or "order:update:all" in permissions
-            or (order.user_id == user_id and "order:update" in permissions)
+        order = await self._get_authorized_order(
+            order_id, user_id, permissions, is_superadmin
         )
 
-        if not can_update:
-            log.warning("User not authorized to update order", order_id=str(order_id))
-            raise OrderNotFoundError(f"Order with ID {order_id} not found")
+        await self._ensure_can_update(order, user_id, permissions, is_superadmin)
+
+        new_status = order_update.status  # Guaranteed by schema
+        current_status = order.status
+
+        if new_status == current_status:
+            log.debug("No status change requested", order_id=str(order_id))
+            return order
 
         # Get only the fields that were provided
         update_data = order_update.model_dump(exclude_unset=True)
@@ -326,70 +423,12 @@ class OrderService:
             log.debug("No fields to update", order_id=str(order_id))
             return order
 
-        # Extract status
-        status = update_data["status"]  # Guaranteed by OrderUpdate schema
+        self._validate_status_transition(current_status, new_status)
 
-        # Validate status transition
-        valid_transitions = {
-            "pending": ["confirmed", "cancelled"],
-            "confirmed": ["shipped", "cancelled"],
-            "shipped": ["delivered"],
-            "delivered": [],
-            "cancelled": [],
-        }
-        current_status = order.status
-        if status not in valid_transitions.get(current_status, []):
-            log.warning(
-                "Order status update failed: invalid transition",
-                order_id=str(order_id),
-                from_status=current_status,
-                to_status=status,
-            )
-            raise OrderStatusTransitionError(
-                f"Cannot transition order from '{current_status}' to '{status}'"
-            )
+        if new_status == "confirmed" and current_status == "pending":
+            await self._process_payment_for_confirmation(order, jwt_token)
 
-        # Handle payment for confirmation
-        if status == "confirmed" and current_status == "pending":
-            try:
-                payment_result = await self.payment_client.create_payment(
-                    order_id, order.total_amount
-                )
-                if not payment_result.get("success"):
-                    raise PaymentProcessingError(
-                        payment_result.get("message", "Payment failed")
-                    )
-                log.info("Payment processed successfully", order_id=str(order_id))
-            except ExternalServiceError:
-                raise
-            except Exception as e:
-                log.error(
-                    "Payment processing failed", order_id=str(order_id), error=str(e)
-                )
-                raise PaymentProcessingError("Payment processing failed") from e
-
-        order.status = status
-        order.updated_at = datetime.utcnow()
-
-        try:
-            self.session.add(order)
-            self.session.commit()
-            self.session.refresh(order)
-            log.info(
-                "Order status updated successfully",
-                order_id=str(order.id),
-                status=status,
-            )
-            return order
-        except Exception as e:
-            log.exception(
-                "Unexpected error during order status update",
-                order_id=str(order.id),
-                error=str(e),
-            )
-            raise DatabaseError(
-                "Failed to update order status due to internal error"
-            ) from e
+        return await self._update_and_save_order(order, new_status)
 
     async def cancel_order(
         self, order_id: UUID, user_id: UUID, permissions: set[str], is_superadmin: bool
