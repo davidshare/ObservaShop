@@ -1,17 +1,19 @@
 # src/infrastructure/clients/order_client.py
 
-from httpx import AsyncClient, ConnectTimeout, ReadTimeout, HTTPStatusError
-from typing import Dict, Any
+from typing import Any, Dict
 from uuid import UUID
+
+from httpx import AsyncClient, ConnectTimeout, HTTPStatusError, ReadTimeout
+
 from src.config.logger_config import log
 from src.core.exceptions import (
-    InvalidInputError,
     ExternalServiceError,
-    PaymentProcessingError,
-    OrderNotFoundError,
     InsufficientStockError,
+    InvalidInputError,
+    OrderNotFoundError,
+    PaymentProcessingError,
+    OrderStatusTransitionError,
 )
-from src.infrastructure.services import jwt_service
 
 
 class OrderClient:
@@ -236,7 +238,7 @@ class OrderClient:
 
         try:
             data = await self._make_request(
-                "PATCH", url, headers=headers, json_data=json_data
+                "PATCH", url, headers=headers, json=json_data
             )
             log.info(
                 "Order status updated successfully",

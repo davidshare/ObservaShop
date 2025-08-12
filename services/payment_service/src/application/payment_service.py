@@ -176,18 +176,7 @@ class PaymentService:
     ) -> Payment:
         """
         Create a new payment.
-        Args:
-            payment_create: PaymentCreate schema with new data.
-            idempotency_key: Optional key to prevent duplicate payments.
-        Returns:
-            Created Payment object.
-        Raises:
-            InvalidInputError: If input data is invalid.
-            IdempotencyError: If idempotency key is reused.
-            PaymentAlreadyExistsError: If a payment already exists for the order.
-            PaymentProcessingError: If order is invalid or gateway fails.
-            ExternalServiceError: If order-service is unreachable.
-            DatabaseError: If there is a database-level error.
+        Orchestrates validation, idempotency, gateway call, DB persistence, and order update.
         """
         log.info(
             "Creating payment",
@@ -196,108 +185,34 @@ class PaymentService:
             idempotency_key=idempotency_key,
         )
 
-        if payment_create.amount <= 0:
-            raise InvalidInputError("Payment amount must be greater than zero")
-        if not payment_create.payment_method:
-            raise InvalidInputError("Payment method is required")
-        if not payment_create.currency:
-            raise InvalidInputError("Currency is required")
+        self._validate_payment_input(payment_create)
 
-        if idempotency_key:
-            try:
-                existing = self.session.exec(
-                    select(Payment).where(Payment.transaction_id == idempotency_key)
-                ).first()
-                if existing:
-                    log.warning(
-                        "Idempotency key reused", idempotency_key=idempotency_key
-                    )
-                    raise IdempotencyError(
-                        f"Payment with idempotency key {idempotency_key} already exists"
-                    )
-            except Exception as e:
-                log.critical("Database error during idempotency check", error=str(e))
-                raise DatabaseError(
-                    "Failed to check idempotency due to internal error"
-                ) from e
-        else:
-            raise InvalidInputError("Idempotency-Key header is required")
+        transaction_id = self._enforce_idempotency(idempotency_key)
 
-        try:
-            order = await self.order_client.get_order(
-                payment_create.order_id, jwt_token=jwt_token
-            )
-            if order["status"] != "pending":
-                raise PaymentProcessingError(
-                    f"Cannot pay for order in '{order['status']}' status"
-                )
-        except Exception as e:
-            log.warning("Order validation failed", error=str(e))
-            raise PaymentProcessingError("Failed to validate order") from e
-
-        existing_payment = self.session.exec(
-            select(Payment).where(Payment.order_id == payment_create.order_id)
-        ).first()
-        if existing_payment:
-            log.warning(
-                "Payment already exists for order",
-                order_id=str(payment_create.order_id),
-            )
-            raise PaymentAlreadyExistsError(
-                f"Payment already exists for order {payment_create.order_id}"
-            )
-
-        success = self._mock_payment_gateway(payment_create.amount)
-        if not success:
-            log.warning(
-                "Mock payment gateway failed", order_id=str(payment_create.order_id)
-            )
-            raise PaymentProcessingError(
-                "Mock payment gateway: failed to process payment"
-            )
-
-        transaction_id = idempotency_key
-        status = "succeeded"
-
-        payment = Payment(
+        _ = await self._validate_order_status(
             order_id=payment_create.order_id,
-            amount=payment_create.amount,
-            currency=payment_create.currency,
-            status=status,
-            payment_method=payment_create.payment_method,
+            jwt_token=jwt_token,
+            payment_amount=payment_create.amount,
+        )
+
+        self._ensure_no_existing_payment(payment_create.order_id)
+
+        self._process_payment_gateway(payment_create.amount)
+
+        payment = self._create_and_save_payment(
+            payment_create=payment_create, transaction_id=transaction_id
+        )
+
+        await self._confirm_order(payment.order_id, jwt_token)
+
+        log.info(
+            "Payment created and order confirmed",
+            payment_id=str(payment.id),
+            order_id=str(payment.order_id),
             transaction_id=transaction_id,
         )
 
-        try:
-            self.session.add(payment)
-            self.session.commit()
-            self.session.refresh(payment)
-
-            log.info(
-                "Payment created successfully",
-                payment_id=str(payment.id),
-                status=payment.status,
-                transaction_id=transaction_id,
-            )
-
-            try:
-                await self.order_client.update_order_status(
-                    order_id=payment.order_id,
-                    status="confirmed",
-                    auth_header=f"Bearer {jwt_token}",
-                )
-            except OrderStatusTransitionError as e:
-                log.critical("Order cannot be confirmed", error=str(e))
-                # Handle error: alert, retry, or manual intervention
-            except ExternalServiceError as e:
-                log.critical("Failed to update order status", error=str(e))
-            return payment
-
-        except Exception as e:
-            log.critical(
-                "Unexpected error during payment creation", error=str(e), exc_info=True
-            )
-            raise DatabaseError("Failed to create payment due to internal error") from e
+        return payment
 
     def _mock_payment_gateway(self, amount: Decimal) -> bool:
         """
@@ -443,3 +358,130 @@ class PaymentService:
                 exc_info=True,
             )
             raise DatabaseError("Failed to refund payment due to internal error") from e
+
+    def _validate_payment_input(self, payment_create: PaymentCreate):
+        """Validate basic payment input fields."""
+        if payment_create.amount <= 0:
+            raise InvalidInputError("Payment amount must be greater than zero")
+        if not payment_create.payment_method:
+            raise InvalidInputError("Payment method is required")
+        if not payment_create.currency:
+            raise InvalidInputError("Currency is required")
+
+    def _enforce_idempotency(self, idempotency_key: Optional[str]) -> str:
+        """Check for existing payment using idempotency key and return transaction_id."""
+        if not idempotency_key:
+            raise InvalidInputError("Idempotency-Key header is required")
+
+        try:
+            existing = self.session.exec(
+                select(Payment).where(Payment.transaction_id == idempotency_key)
+            ).first()
+            if existing:
+                log.info(
+                    "Idempotency hit: returning existing payment",
+                    transaction_id=idempotency_key,
+                )
+                return idempotency_key
+        except Exception as e:
+            log.critical("Database error during idempotency check", error=str(e))
+            raise DatabaseError(
+                "Failed to check idempotency due to internal error"
+            ) from e
+
+        return idempotency_key  # New transaction
+
+    async def _validate_order_status(
+        self, order_id: UUID, jwt_token: str, payment_amount: float
+    ) -> dict:
+        """Fetch order and validate it's in 'pending' status."""
+        try:
+            order = await self.order_client.get_order(order_id, jwt_token=jwt_token)
+            if order["status"] != "pending":
+                raise PaymentProcessingError(
+                    f"Cannot pay for order in '{order['status']}' status"
+                )
+
+            order_total = Decimal(str(order["total_amount"]))
+            amount = Decimal(str(payment_amount))
+            if amount != order_total:
+                log.warning(
+                    "Payment amount mismatch",
+                    expected=str(order_total),
+                    got=str(amount),
+                    order_id=str(order_id),
+                )
+                raise InvalidInputError(
+                    f"Payment amount ({amount}) does not match order total ({order_total})"
+                )
+            return order
+        except Exception as e:
+            log.warning("Order validation failed", error=str(e))
+            raise PaymentProcessingError("Failed to validate order") from e
+
+    def _ensure_no_existing_payment(self, order_id: UUID):
+        """Ensure no payment already exists for this order."""
+        existing_payment = self.session.exec(
+            select(Payment).where(Payment.order_id == order_id)
+        ).first()
+        if existing_payment:
+            log.warning("Payment already exists for order", order_id=str(order_id))
+            raise PaymentAlreadyExistsError(
+                f"Payment already exists for order {order_id}"
+            )
+
+    def _process_payment_gateway(self, amount: float):
+        """Simulate external payment gateway call."""
+        success = self._mock_payment_gateway(amount)
+        if not success:
+            log.warning("Mock payment gateway failed")
+            raise PaymentProcessingError(
+                "Mock payment gateway: failed to process payment"
+            )
+
+    def _create_and_save_payment(
+        self, payment_create: PaymentCreate, transaction_id: str
+    ) -> Payment:
+        """Create Payment model and persist to database."""
+        payment = Payment(
+            order_id=payment_create.order_id,
+            amount=payment_create.amount,
+            currency=payment_create.currency,
+            status="succeeded",
+            payment_method=payment_create.payment_method,
+            transaction_id=transaction_id,
+        )
+
+        try:
+            self.session.add(payment)
+            self.session.commit()
+            self.session.refresh(payment)
+            log.info(
+                "Payment saved to database",
+                payment_id=str(payment.id),
+                transaction_id=transaction_id,
+            )
+            return payment
+        except Exception as e:
+            log.critical(
+                "Unexpected error during payment creation", error=str(e), exc_info=True
+            )
+            raise DatabaseError("Failed to create payment due to internal error") from e
+
+    async def _confirm_order(self, order_id: UUID, jwt_token: str):
+        """Update order status to 'confirmed' via order-client."""
+        try:
+            await self.order_client.update_order_status(
+                order_id=order_id,
+                status="confirmed",
+                auth_header=f"Bearer {jwt_token}",
+            )
+            log.info("Order status updated to 'confirmed'", order_id=str(order_id))
+        except OrderStatusTransitionError as e:
+            log.critical("Order cannot be confirmed", error=str(e))
+            # Alerting system should notify ops
+        except ExternalServiceError as e:
+            log.critical("Failed to update order status", error=str(e))
+            # Emit alert: "Payment succeeded but order not confirmed"
+        except Exception as e:
+            log.critical("Unexpected error during order confirmation", error=str(e))
