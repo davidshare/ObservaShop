@@ -379,10 +379,11 @@ class PaymentService:
             ).first()
             if existing:
                 log.info(
-                    "Idempotency hit: returning existing payment",
+                    "Idempotency hit: duplicate transaction key",
                     transaction_id=idempotency_key,
                 )
-                return idempotency_key
+                raise IdempotencyError("Cannot use already used transaction key")
+            return idempotency_key
         except Exception as e:
             log.critical("Database error during idempotency check", error=str(e))
             raise DatabaseError(
