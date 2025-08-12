@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, stat
 from sqlmodel import Session
 
 from src.application.payment_service import PaymentService
-from src.config.config import config
 from src.config.logger_config import log
 from src.core.exceptions import (
     DatabaseError,
@@ -16,7 +15,6 @@ from src.core.exceptions import (
     PaymentNotFoundError,
     PaymentProcessingError,
 )
-from src.infrastructure.clients.order_client import OrderClient
 from src.infrastructure.database.session import get_session
 from src.infrastructure.services import jwt_service
 from src.interfaces.http.dependencies import require_permission
@@ -30,12 +28,6 @@ from src.interfaces.http.schemas import (
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 
-def get_order_client() -> OrderClient:
-    """Dependency to get OrderClient."""
-
-    return OrderClient(base_url=config.ORDER_SERVICE_URL)
-
-
 @router.post("", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
 async def create_payment(
     payment_create: PaymentCreate,
@@ -47,7 +39,6 @@ async def create_payment(
         jwt_service.get_current_user_id
     ),
     _: UUID = Depends(require_permission("create", "payment")),
-    order_client: OrderClient = Depends(get_order_client),
 ):
     """
     Create a new payment.
@@ -56,7 +47,7 @@ async def create_payment(
     - Validates order status via order-service
     - Returns created payment
     """
-    user_id, jwt_token = current_user_id_and_token
+    user_id, _ = current_user_id_and_token
 
     try:
         log.info(
@@ -67,10 +58,8 @@ async def create_payment(
             idempotency_key=idempotency_key,
         )
 
-        payment_service = PaymentService(session=session, order_client=order_client)
-        payment = await payment_service.create_payment(
-            payment_create, idempotency_key, jwt_token
-        )
+        payment_service = PaymentService(session=session)
+        payment = await payment_service.create_payment(payment_create, idempotency_key)
 
         return PaymentResponse.model_validate(payment)
 
@@ -132,7 +121,6 @@ async def get_payment(
         jwt_service.get_current_user_id_with_claims
     ),
     _: UUID = Depends(require_permission("read", "payment")),
-    order_client: OrderClient = Depends(get_order_client),
 ):
     """
     Retrieve a payment by ID.
@@ -148,7 +136,7 @@ async def get_payment(
             "Get payment request", payment_id=str(payment_id), user_id=str(user_id)
         )
 
-        payment_service = PaymentService(session=session, order_client=order_client)
+        payment_service = PaymentService(session=session)
         payment = await payment_service.get_payment_by_id(
             payment_id=payment_id,
             user_id=user_id,
@@ -182,14 +170,13 @@ async def list_payments(
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
     sort: str = Query("created_at:desc", description="Sort by field:direction"),
-    status: Optional[str] = Query(None, description="Filter by payment status"),
+    payment_status: Optional[str] = Query(None, description="Filter by payment status"),
     order_id: Optional[UUID] = Query(None, description="Filter by order ID"),
     session: Session = Depends(get_session),
     user_id_and_claims: tuple[UUID, dict] = Depends(
         jwt_service.get_current_user_id_with_claims
     ),
     _: UUID = Depends(require_permission("list", "payment")),
-    order_client: OrderClient = Depends(get_order_client),
 ):
     """
     List payments with pagination and filtering.
@@ -206,11 +193,11 @@ async def list_payments(
             user_id=str(user_id),
             limit=limit,
             offset=offset,
-            status=status,
+            status=payment_status,
             order_id=str(order_id) if order_id else None,
         )
 
-        payment_service = PaymentService(session=session, order_client=order_client)
+        payment_service = PaymentService(session=session)
         payments, total = payment_service.list_payments(
             user_id=user_id,
             permissions=permissions,
@@ -218,7 +205,7 @@ async def list_payments(
             limit=limit,
             offset=offset,
             sort=sort,
-            status=status,
+            status=payment_status,
             order_id=order_id,
         )
 
@@ -258,7 +245,6 @@ async def update_payment_status(
         jwt_service.get_current_user_id_with_claims
     ),
     _: UUID = Depends(require_permission("update", "payment")),
-    order_client: OrderClient = Depends(get_order_client),
 ):
     """
     Update the status of an existing payment.
@@ -277,7 +263,7 @@ async def update_payment_status(
             user_id=str(user_id),
         )
 
-        payment_service = PaymentService(session=session, order_client=order_client)
+        payment_service = PaymentService(session=session)
         payment = await payment_service.update_payment_status(
             payment_id=payment_id,
             payment_update=payment_update,
@@ -316,7 +302,6 @@ async def refund_payment(
         jwt_service.get_current_user_id_with_claims
     ),
     _: UUID = Depends(require_permission("refund", "payment")),
-    order_client: OrderClient = Depends(get_order_client),
 ):
     """
     Refund an existing payment.
@@ -332,7 +317,7 @@ async def refund_payment(
             "Refund payment request", payment_id=str(payment_id), user_id=str(user_id)
         )
 
-        payment_service = PaymentService(session=session, order_client=order_client)
+        payment_service = PaymentService(session=session)
         payment = await payment_service.refund_payment(
             payment_id=payment_id,
             user_id=user_id,

@@ -1,5 +1,3 @@
-# src/application/payment_service.py
-
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Tuple
@@ -13,13 +11,9 @@ from src.core.exceptions import (
     IdempotencyError,
     PaymentProcessingError,
     DatabaseError,
-    ExternalServiceError,
-    OrderStatusTransitionError,
 )
 from src.domain.models import Payment
 from src.interfaces.http.schemas import PaymentCreate, PaymentUpdate
-from src.infrastructure.clients.order_client import OrderClient
-
 
 class PaymentService:
     """
@@ -29,7 +23,7 @@ class PaymentService:
     No Kafka integration — for future extension.
     """
 
-    def __init__(self, session: Session, order_client: OrderClient):
+    def __init__(self, session: Session):
         """
         Initialize the service with a database session and order client.
         Args:
@@ -37,7 +31,6 @@ class PaymentService:
             order_client: Client to interact with order-service for validation.
         """
         self.session = session
-        self.order_client = order_client
 
     async def get_payment_by_id(
         self,
@@ -80,13 +73,6 @@ class PaymentService:
 
         if is_superadmin or "payment:read:all" in permissions:
             return payment
-
-        try:
-            order = await self.order_client.get_order(payment.order_id)
-            if order["user_id"] != str(user_id):
-                raise PaymentNotFoundError(f"Payment with ID {payment_id} not found")
-        except Exception as e:
-            raise PaymentNotFoundError(f"Payment with ID {payment_id} not found") from e
 
         if "payment:read" in permissions:
             return payment
@@ -172,7 +158,6 @@ class PaymentService:
         self,
         payment_create: PaymentCreate,
         idempotency_key: Optional[str] = None,
-        jwt_token: str = None,
     ) -> Payment:
         """
         Create a new payment.
@@ -189,12 +174,6 @@ class PaymentService:
 
         transaction_id = self._enforce_idempotency(idempotency_key)
 
-        _ = await self._validate_order_status(
-            order_id=payment_create.order_id,
-            jwt_token=jwt_token,
-            payment_amount=payment_create.amount,
-        )
-
         self._ensure_no_existing_payment(payment_create.order_id)
 
         self._process_payment_gateway(payment_create.amount)
@@ -202,8 +181,6 @@ class PaymentService:
         payment = self._create_and_save_payment(
             payment_create=payment_create, transaction_id=transaction_id
         )
-
-        await self._confirm_order(payment.order_id, jwt_token)
 
         log.info(
             "Payment created and order confirmed",
@@ -390,35 +367,7 @@ class PaymentService:
                 "Failed to check idempotency due to internal error"
             ) from e
 
-        return idempotency_key  # New transaction
-
-    async def _validate_order_status(
-        self, order_id: UUID, jwt_token: str, payment_amount: float
-    ) -> dict:
-        """Fetch order and validate it's in 'pending' status."""
-        try:
-            order = await self.order_client.get_order(order_id, jwt_token=jwt_token)
-            if order["status"] != "pending":
-                raise PaymentProcessingError(
-                    f"Cannot pay for order in '{order['status']}' status"
-                )
-
-            order_total = Decimal(str(order["total_amount"]))
-            amount = Decimal(str(payment_amount))
-            if amount != order_total:
-                log.warning(
-                    "Payment amount mismatch",
-                    expected=str(order_total),
-                    got=str(amount),
-                    order_id=str(order_id),
-                )
-                raise InvalidInputError(
-                    f"Payment amount ({amount}) does not match order total ({order_total})"
-                )
-            return order
-        except Exception as e:
-            log.warning("Order validation failed", error=str(e))
-            raise PaymentProcessingError("Failed to validate order") from e
+        return idempotency_key
 
     def _ensure_no_existing_payment(self, order_id: UUID):
         """Ensure no payment already exists for this order."""
@@ -468,21 +417,3 @@ class PaymentService:
                 "Unexpected error during payment creation", error=str(e), exc_info=True
             )
             raise DatabaseError("Failed to create payment due to internal error") from e
-
-    async def _confirm_order(self, order_id: UUID, jwt_token: str):
-        """Update order status to 'confirmed' via order-client."""
-        try:
-            await self.order_client.update_order_status(
-                order_id=order_id,
-                status="confirmed",
-                auth_header=f"Bearer {jwt_token}",
-            )
-            log.info("Order status updated to 'confirmed'", order_id=str(order_id))
-        except OrderStatusTransitionError as e:
-            log.critical("Order cannot be confirmed", error=str(e))
-            # Alerting system should notify ops
-        except ExternalServiceError as e:
-            log.critical("Failed to update order status", error=str(e))
-            # Emit alert: "Payment succeeded but order not confirmed"
-        except Exception as e:
-            log.critical("Unexpected error during order confirmation", error=str(e))
