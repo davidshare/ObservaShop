@@ -35,6 +35,15 @@ class Config(BaseSettings):
     INTERNAL_SHARED_SECRET: str
     ORDER_SERVICE_URL: str
 
+    # Minio
+    MINIO_ROOT_USER: str
+    MINIO_ROOT_PASSWORD: str
+    MINIO_ACCESS_KEY: str
+    MINIO_SECRET_KEY: str
+    MINIO_ENDPOINT: str
+    MINIO_SECURE: bool
+    MINIO_BUCKET_NAME: str
+
     @property
     def DATABASE_URL(self) -> str:
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}/{self.POSTGRES_DB}"

@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from src.config.logger_config import log
 from src.infrastructure.database.session import init_sqlmodel
+from src.interfaces.http.media import router as media_router
 
 
 @asynccontextmanager
@@ -9,7 +10,7 @@ async def lifespan(app: FastAPI):
     """
     FastAPI lifespan handler: runs on startup and shutdown.
     """
-    log.info("Starting payment-service initialization")
+    log.info("Starting medi-service initialization")
 
     # Startup
     try:
@@ -23,11 +24,11 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
-    log.info("payment-service shutdown complete")
+    log.info("medi-service shutdown complete")
 
 
 app = FastAPI(
-    title="payment-service",
+    title="medi-service",
     description="Order service for ObservaShop",
     version="0.1.0",
     lifespan=lifespan,
@@ -36,7 +37,7 @@ app = FastAPI(
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello from payment-service!"}
+    return {"message": "Hello from medi-service!"}
 
 
 @app.get("/health")
@@ -50,4 +51,4 @@ async def health_check():
     }
 
 
-# app.include_router(payment_router)
+app.include_router(media_router)

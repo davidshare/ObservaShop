@@ -1,3 +1,5 @@
 {
+  "python.defaultInterpreterPath": "${workspaceFolder}/services/media_service/.venv/bin/python",
+  "python.envFile": "${workspaceFolder}/.env",
   "jira-plugin.workingProject": ""
 }
