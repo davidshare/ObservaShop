@@ -17,5 +17,6 @@ dependencies = [
     "pydantic[email]>=2.11.7",
     "pydantic-settings>=2.10.1",
     "loguru>=0.7.3",
-    "bcrypt>=4.3.0"
+    "bcrypt>=4.3.0",
+    "httpx>=0.28.1",
 ]
