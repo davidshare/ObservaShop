@@ -1,6 +1,6 @@
 services:
   kong:
-    image: kong:latest
+    image: kong:3.9.1-ubuntu
     environment:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/kong/kong.yml
@@ -16,7 +16,7 @@ services:
       - observashop-network
 
   redis:
-    image: redis:latest
+    image: redis:8.2.0
     ports:
       - "6379:6379"
     volumes:
@@ -28,13 +28,11 @@ services:
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
     env_file: .env
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Console
+      - "9000:9000" # API
+      - "9001:9001" # Console
     volumes:
       # - ./minio/minio-config.yaml:/etc/minio/config.yaml
       - minio-data:/data
@@ -46,27 +44,28 @@ services:
       timeout: 5s
       retries: 3
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.7.0
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
     environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-    env_file: .env
-    depends_on:
-      - zookeeper
+      KAFKA_BROKER_ID: 1
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      CLUSTER_ID: x5BLWJITiM0HSEgBDDkwbg==
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes:
       - kafka-data:/var/lib/kafka/data
-    networks:
-      - observashop-network
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    environment:
-      - ZOOKEEPER_CLIENT_PORT=2181
-      - ZOOKEEPER_TICK_TIME=2000
-    env_file: .env
-    volumes:
-      - zookeeper-data:/var/lib/zookeeper/data
     networks:
       - observashop-network
   postgres-auth:
@@ -185,7 +184,6 @@ volumes:
   redis-data:
   minio-data:
   kafka-data:
-  zookeeper-data:
   postgres-auth-data:
   postgres-authz-data:
   postgres-product-data:

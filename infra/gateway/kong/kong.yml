@@ -1,0 +1,134 @@
+_format_version: "3.0"
+
+services:
+  - name: auth-service
+    url: http://auth-service:8000
+    routes:
+      - name: auth-route
+        paths:
+          - /auth
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          claims_to_verify:
+            - exp
+          key_claim_name: sub
+
+  - name: authz-service
+    url: http://authz-service:8001
+    routes:
+      - name: authz-route
+        paths:
+          - /authz
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          claims_to_verify:
+            - exp
+          key_claim_name: sub
+
+  - name: product-service
+    url: http://product-service:8002
+    routes:
+      - name: product-route
+        paths:
+          - /products
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          claims_to_verify:
+            - exp
+          key_claim_name: sub
+
+  - name: order-service
+    url: http://order-service:8003
+    routes:
+      - name: order-route
+        paths:
+          - /orders
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          claims_to_verify:
+            - exp
+          key_claim_name: sub
+
+  - name: payment-service
+    url: http://payment-service:8004
+    routes:
+      - name: payment-route
+        paths:
+          - /payments
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          claims_to_verify:
+            - exp
+          key_claim_name: sub
+
+  - name: media-service
+    url: http://media-service:8005
+    routes:
+      - name: media-route
+        paths:
+          - /media
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          claims_to_verify:
+            - exp
+          key_claim_name: sub
+
+  - name: notification-service
+    url: http://notification-service:8006
+    routes:
+      - name: notification-route
+        paths:
+          - /notifications
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          claims_to_verify:
+            - exp
+          key_claim_name: sub
+
+  - name: analytics-service
+    url: http://analytics-service:8007
+    routes:
+      - name: analytics-route
+        paths:
+          - /analytics
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          claims_to_verify:
+            - exp
+          key_claim_name: sub
+
+plugins:
+  - name: prometheus
+    # No config needed — metrics available at :8001/metrics
