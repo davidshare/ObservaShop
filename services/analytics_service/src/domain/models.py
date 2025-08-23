@@ -1,37 +1,42 @@
-from sqlmodel import SQLModel, Field, Column as SQLColumn
-from typing import Optional, Dict, Any
+from datetime import datetime, timezone
+from typing import Any, Dict
 from uuid import UUID, uuid4
-from datetime import datetime
 
 import sqlalchemy.dialects.postgresql as pg
+from sqlmodel import Column as SQLColumn
+from sqlmodel import Field, SQLModel
 
 
-# Use native PostgreSQL JSONB and UUID types via sqlalchemy.dialects.postgresql
 class Metrics(SQLModel, table=True):
-    __tablename__ = "metrics"
-    __table_args__ = {"schema": "analytics"}
+    """
+    Generic metrics table for analytics service.
+    Uses PostgreSQL JSONB for flexible schema.
+    """
+
+    # Remove schema unless you have multiple schemas
+    __table_args__ = {"schema": "analytics", "extend_existing": True}
 
     id: UUID = Field(
-        sa_column=SQLColumn(
-            pg.UUID(as_uuid=True),
-            primary_key=True,
-            default=uuid4,
-            index=True,
-            nullable=False,
-        )
+        default_factory=uuid4,
+        primary_key=True,
+        index=True,
+        description="Unique identifier for the metric",
     )
 
-    type: str = Field(max_length=50, nullable=False)
+    metric_type: str = Field(
+        max_length=50,
+        index=True,
+        description="Type of metric (user_activity, sales, system, etc.)",
+    )
 
     value: Dict[str, Any] = Field(
-        sa_column=SQLColumn(
-            pg.JSONB,  # Use PostgreSQL-specific JSONB
-            nullable=False,
-        )
+        default={},
+        sa_column=SQLColumn(pg.JSONB, nullable=False),
+        description="Metric data in structured JSON format",
     )
 
-    created_at: Optional[datetime] = Field(
-        sa_column=SQLColumn(
-            pg.TIMESTAMP(timezone=True), default=datetime.utcnow, nullable=False
-        )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column=SQLColumn(pg.TIMESTAMP(timezone=True), nullable=False, index=True),
+        description="When the metric was recorded (UTC)",
     )
