@@ -408,3 +408,17 @@ class RedisService:
                 order_id=str(order_id),
                 error=str(e),
             )
+
+    async def exists(self, key: str) -> bool:
+        """
+        Check if a key exists in Redis.
+        Uses the existing _client without modifying __init__.
+        """
+        if self._client is None:
+            raise RuntimeError("Redis client not connected. Call connect() first.")
+
+        try:
+            return bool(await self._client.exists(key))
+        except Exception as e:
+            log.warning("Error checking Redis key existence", key=key, error=str(e))
+            return False

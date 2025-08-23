@@ -1,5 +1,0 @@
-{
-  "python.defaultInterpreterPath": "${workspaceFolder}/services/notification/.venv/bin/python",
-  "python.envFile": "${workspaceFolder}/.env",
-  "jira-plugin.workingProject": ""
-}

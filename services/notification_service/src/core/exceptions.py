@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class NotificationError(Exception):
     """Base exception for all notification-related errors"""
 
@@ -138,16 +141,19 @@ class ExternalServiceError(NotificationError):
         self.message = message
 
 
-class PermissionDeniedError(NotificationError):
+class PermissionDeniedError(Exception):
     """Raised when user is not authorized to perform an action"""
 
-    def __init__(self, action: str, user_id: str = ""):
-        message = f"Permission denied: {action}"
-        if user_id:
-            message += f" for user {user_id}"
-        super().__init__(message)
+    def __init__(
+        self,
+        action: str,
+        user_id: Optional[str] = None,  # ← Make it Optional
+        resource: Optional[str] = None,
+    ):
         self.action = action
         self.user_id = user_id
+        self.resource = resource
+        super().__init__(f"Permission denied for {action} on {resource or 'resource'}")
 
 
 class RateLimitExceededError(NotificationError):
@@ -160,6 +166,36 @@ class RateLimitExceededError(NotificationError):
         self.recipient = recipient
         self.limit = limit
         self.period = period
+
+
+class SchemaValidationError(NotificationError):
+    """Raised when event schema validation fails"""
+
+    def __init__(self, message: str):
+        super().__init__(f"Schema validation failed: {message}")
+        self.message = message
+
+
+class KafkaConnectionError(NotificationError):
+    """Raised when there is a connection error with Kafka"""
+
+    def __init__(self, message: str):
+        super().__init__(f"Kafka connection error: {message}")
+        self.message = message
+
+
+class KafkaAuthenticationError(NotificationError):
+    """Raised when Kafka authentication fails"""
+
+    def __init__(self, message: str = "Kafka authentication failed"):
+        super().__init__(message)
+
+
+class KafkaTimeoutError(NotificationError):
+    """Raised when Kafka operations timeout"""
+
+    def __init__(self, message: str = "Kafka operation timed out"):
+        super().__init__(message)
 
 
 ### Redis errors

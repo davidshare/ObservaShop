@@ -1,0 +1,17 @@
+"""
+Topic definitions for ObservaShop.
+"""
+
+USER_CREATED = "user.created"
+ORDER_CREATED = "order.created"
+ORDER_SHIPPED = "order.shipped"
+ORDER_DELIVERED = "order.delivered"
+ORDER_CANCELLED = "order.cancelled"
+PAYMENT_SUCCEEDED = "payment.succeeded"
+PAYMENT_FAILED = "payment.failed"
+PRODUCT_BACK_IN_STOCK = "product.back_in_stock"
+USER_PASSWORD_RESET = "user.password_reset"
+USER_EMAIL_CHANGED = "user.email_changed"
+USER_DELETED = "user.deleted"
+USER_UPDATED = "user.updated"
+NOTIFICATION_SERVICE_DLQ = "notification_service_dlq"

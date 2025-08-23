@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="payment-service",
-    description="Order service for ObservaShop",
+    description="Payment service for ObservaShop",
     version="0.1.0",
     lifespan=lifespan,
 )  # This is what Uvicorn needs to run
