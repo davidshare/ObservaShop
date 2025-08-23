@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from src.config.config import config as settings
-from src.infrastructure.database.models import Metrics
+from src.domain.models import Metrics
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
