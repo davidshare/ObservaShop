@@ -47,6 +47,11 @@ class RedisService:
         """
         self._client: Optional[AsyncRedis] = None
 
+    @property
+    def client(self) -> Optional[AsyncRedis]:
+        """Public access to the Redis client."""
+        return self._client
+
     async def connect(self) -> None:
         """
         Establish a connection to the Redis server using configuration from `config`.
@@ -408,3 +413,8 @@ class RedisService:
                 order_id=str(order_id),
                 error=str(e),
             )
+
+    def redis_client(self):
+        "return the private variable redis client"
+
+        return self._client

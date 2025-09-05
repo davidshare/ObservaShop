@@ -1,71 +1,84 @@
-# src/interfaces/http/schemas.py
+"""
+Pydantic schemas for the analytics service API.
+These schemas exactly match the return types of AnalyticsService methods.
+No dummy data — only real field definitions.
+"""
+
 from datetime import datetime
 from typing import Dict, Any
-from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
-class MetricCreate(BaseModel):
+class EventCreate(BaseModel):
     """
-    Schema for creating a new metric.
-    Used in POST requests to /metrics.
+    Schema for creating a new analytics event.
+    Matches the input parameters of AnalyticsService.track_event().
     """
 
-    metric_type: str = Field(
-        ..., max_length=50, description="Type of metric (user_activity, sales, system)"
+    event_type: str = Field(
+        ..., description="Type of event (e.g., user.login, order.created)"
     )
-    value: Dict[str, Any] = Field(..., description="Metric data in key-value format")
+    data: Dict[str, Any] = Field(..., description="Event payload data")
 
-    class Config:
-        extra = "forbid"
-        json_schema_extra = {
-            "example": {
-                "metric_type": "user.login",
-                "value": {
-                    "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-                    "ip_address": "192.168.1.1",
-                },
-            }
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
-class MetricResponse(BaseModel):
+class UserActivitySummaryResponse(BaseModel):
     """
-    Schema for metric response.
-    Includes all fields from Metrics model.
+    Schema for user activity summary.
+    Matches the return type of AnalyticsService.get_user_activity_summary().
     """
 
-    id: UUID = Field(..., description="Unique identifier for the metric")
-    metric_type: str = Field(..., description="Type of metric")
-    value: Dict[str, Any] = Field(..., description="Metric data")
-    created_at: datetime = Field(..., description="When the metric was recorded")
+    period_days: int = Field(..., description="Number of days in the analysis period")
+    total_events: int = Field(..., description="Total number of events in the period")
+    events_by_type: Dict[str, int] = Field(
+        ..., description="Count of events grouped by event type"
+    )
+    generated_at: datetime = Field(..., description="When the summary was generated")
 
-    class Config:
-        extra = "forbid"
-        json_schema_extra = {
-            "example": {
-                "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-                "metric_type": "user.login",
-                "value": {
-                    "user_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-                    "ip_address": "192.168.1.1",
-                },
-                "created_at": "2025-08-22T12:00:00Z",
-            }
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
-class MetricsListResponse(BaseModel):
+class SalesSummaryResponse(BaseModel):
     """
-    Schema for paginated list of metrics.
+    Schema for sales performance summary.
+    Matches the return type of AnalyticsService.get_sales_summary().
     """
 
-    metrics: list[MetricResponse] = Field(..., description="List of metrics")
-    meta: dict = Field(..., description="Pagination metadata")
+    period_days: int = Field(..., description="Number of days in the analysis period")
+    total_revenue: float = Field(..., description="Total revenue generated")
+    orders_count: int = Field(..., description="Total number of orders")
+    average_order_value: float = Field(..., description="Average value per order")
+    generated_at: datetime = Field(..., description="When the summary was generated")
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
+
+
+class SystemHealthResponse(BaseModel):
+    """
+    Schema for system health metrics.
+    Matches the return type of AnalyticsService.get_system_health().
+    """
+
+    period: str = Field(..., description="Time period for the metrics")
+    metrics: Dict[str, Dict[str, float]] = Field(
+        ..., description="Health metrics with avg/max/min values"
+    )
+    generated_at: datetime = Field(..., description="When the metrics were generated")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ErrorResponse(BaseModel):
+    """
+    Schema for error responses.
+    Standardized format for all API errors.
+    """
+
+    detail: str = Field(..., description="Error message")
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class HealthResponse(BaseModel):
@@ -73,10 +86,8 @@ class HealthResponse(BaseModel):
     Schema for health check response.
     """
 
-    status: str = Field(..., description="Service status (healthy, unhealthy)")
-    service: str = Field(..., description="Service name")
+    status: str = Field(..., description="Service status")
     database: str = Field(..., description="Database connection status")
     redis: str = Field(..., description="Redis connection status")
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")

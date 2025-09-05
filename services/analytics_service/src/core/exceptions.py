@@ -180,3 +180,31 @@ class ExternalServiceError(Exception):
         self.service_name = service_name
         self.message = message
         self.original_exception = original_exception
+
+
+class SchemaValidationError(Exception):
+    pass
+
+
+class CacheError(Exception):
+    pass
+
+
+class EventProcessingError(Exception):
+    pass
+
+
+class NotFoundError(Exception):
+    pass
+
+
+class PermissionDeniedError(Exception):
+    pass
+
+
+class ValidationError(Exception):
+    pass
+
+
+class QueryError(Exception):
+    pass

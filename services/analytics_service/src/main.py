@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from src.config.logger_config import log
 from src.infrastructure.database.session import init_sqlmodel
 from src.infrastructure.services import redis_service
-# from src.interfaces.http.analytics import router as analytics_router
+from src.interfaces.http.analytics import router as analytics_router
 
 
 @asynccontextmanager
@@ -58,4 +58,4 @@ async def health_check():
     }
 
 
-# app.include_router(analytics_router)
+app.include_router(analytics_router)
