@@ -3,6 +3,7 @@ services:
     image: prom/prometheus:latest
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./observability/prometheus/rules.yml:/etc/prometheus/rules.yml
       - prometheus-data:/prometheus
     ports:
       - "9090:9090"
@@ -26,6 +27,14 @@ services:
       - "3100:3100"
     networks:
       - observashop-network
+  alert-manager:
+    image: prom/alertmanager
+    volumes:
+      - "./observability/alertmanager/alertmanager.yml:/alertmanager/alertmanager.yml"
+    networks:
+      - observashop
+    ports:
+      - 9093:9093
   tempo:
     image: grafana/tempo:latest
     volumes:
@@ -33,6 +42,73 @@ services:
       - tempo-data:/tempo
     ports:
       - "3200:3200"
+    networks:
+      - observashop-network
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    volumes:
+      - ./observability/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - observashop-network
+  node-exporter:
+    image: prom/node-exporter:latest
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+    ports:
+      - "9100:9100"
+    networks:
+      - observashop-network
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_URI=postgres-auth:5432,postgres-product:5432,postgres-order:5432,postgres-payment:5432,postgres-notification:5432,postgres-media:5432,postgres-analytics:5432,postgres-authz:5432?sslmode=disable
+      - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
+      - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
+    ports:
+      - "9187:9187"
+    networks:
+      - observashop-network
+    depends_on:
+      - postgres-auth
+      - postgres-product
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    environment:
+      - REDIS_ADDR=redis:6379
+      # Optional: If your Redis requires authentication
+      # - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "9121:9121"
+    networks:
+      - observashop-network
+    depends_on:
+      - redis
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+    ports:
+      - "9308:9308"
+    networks:
+      - observashop-network
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
     networks:
       - observashop-network
 volumes:

@@ -8,6 +8,9 @@ services:
       - POSTGRES_USER=${POSTGRES_ANALYTICS_USER}
       - POSTGRES_PASSWORD=${POSTGRES_ANALYTICS_PASSWORD}
       - POSTGRES_DB=analytics
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=your-service-name
+      - OTEL_PYTHON_LOG_CORRELATION=true
     env_file: .env
     ports:
       - "8007:8000"
@@ -28,6 +31,10 @@ services:
       - CONSOLE_LOG_LEVEL=DEBUG
       - FILE_LOG_LEVEL=DEBUG
       - ERROR_LOG_LEVEL=ERROR
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=your-service-name
+      - OTEL_PYTHON_LOG_CORRELATION=true
+
     env_file: .env
     logging:
       driver: "json-file"
@@ -35,7 +42,7 @@ services:
         max-size: "10m"
         max-file: "3"
     ports:
-      - "8010:8000"
+      - "8001:8000"
     networks:
       - observashop-network
   authz-service:
@@ -52,6 +59,9 @@ services:
       - CONSOLE_LOG_LEVEL=DEBUG
       - FILE_LOG_LEVEL=DEBUG
       - ERROR_LOG_LEVEL=ERROR
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=your-service-name
+      - OTEL_PYTHON_LOG_CORRELATION=true
     env_file: .env
     logging:
       driver: "json-file"
@@ -72,6 +82,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PRODUCT_PASSWORD}
       - POSTGRES_DB=product
       - REDIS_HOST=${REDIS_HOST}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=your-service-name
+      - OTEL_PYTHON_LOG_CORRELATION=true
     env_file: .env
     ports:
       - "8002:8000"
@@ -86,6 +99,9 @@ services:
       - POSTGRES_USER=${POSTGRES_ORDER_USER}
       - POSTGRES_PASSWORD=${POSTGRES_ORDER_PASSWORD}
       - POSTGRES_DB=order
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=your-service-name
+      - OTEL_PYTHON_LOG_CORRELATION=true
     env_file: .env
     ports:
       - "8003:8000"
@@ -100,6 +116,9 @@ services:
       - POSTGRES_USER=${POSTGRES_PAYMENT_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PAYMENT_PASSWORD}
       - POSTGRES_DB=payment
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=your-service-name
+      - OTEL_PYTHON_LOG_CORRELATION=true
     env_file: .env
     ports:
       - "8004:8000"
@@ -114,6 +133,9 @@ services:
       - POSTGRES_USER=${POSTGRES_NOTIFICATION_USER}
       - POSTGRES_PASSWORD=${POSTGRES_NOTIFICATION_PASSWORD}
       - POSTGRES_DB=notification
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=your-service-name
+      - OTEL_PYTHON_LOG_CORRELATION=true
     env_file: .env
     ports:
       - "8005:8000"
@@ -131,6 +153,9 @@ services:
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=your-service-name
+      - OTEL_PYTHON_LOG_CORRELATION=true
     env_file: .env
     ports:
       - "8006:8000"

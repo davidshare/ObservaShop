@@ -1,0 +1,152 @@
+groups:
+  - name: node-exporter
+    rules:
+      - alert: NodeHighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% for more than 5 minutes."
+      - alert: NodeHighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 80% for more than 5 minutes."
+      - alert: NodeFilesystemUsageHigh
+        expr: (node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High filesystem usage on {{ $labels.instance }} at {{ $labels.mountpoint }}"
+          description: "Filesystem usage is above 80% for more than 5 minutes."
+
+  - name: cadvisor
+    rules:
+      - alert: ContainerHighCPUUsage
+        expr: sum(rate(container_cpu_usage_seconds_total[5m])) by (container_name) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage in container {{ $labels.container_name }}"
+          description: "Container CPU usage is above 80% for more than 5 minutes."
+      - alert: ContainerHighMemoryUsage
+        expr: container_memory_usage_bytes / container_memory_limit_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage in container {{ $labels.container_name }}"
+          description: "Container memory usage is above 80% of limit for more than 5 minutes."
+
+  - name: postgres-exporter
+    rules:
+      - alert: PostgresHighConnections
+        expr: sum(pg_stat_activity_count) by (instance) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of connections on Postgres {{ $labels.instance }}"
+          description: "More than 80 connections for more than 5 minutes."
+      - alert: PostgresSlowQueries
+        expr: rate(pg_stat_statements_total_time[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow queries detected on Postgres {{ $labels.instance }}"
+          description: "Query time rate exceeds threshold."
+
+  - name: redis-exporter
+    rules:
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage in Redis"
+          description: "Redis memory usage above 80%."
+      - alert: RedisConnectionRefused
+        expr: rate(redis_rejected_connections_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis refusing connections"
+          description: "Rejected connections detected."
+
+  - name: kafka-exporter
+    rules:
+      - alert: KafkaHighLag
+        expr: kafka_consumergroup_lag > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High consumer lag in Kafka topic {{ $labels.topic }}"
+          description: "Consumer lag exceeds 1000 messages."
+      - alert: KafkaBrokerDown
+        expr: up{job="kafka"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka broker down"
+          description: "Kafka broker is not responding."
+
+  - name: minio
+    rules:
+      - alert: MinioHighDiskUsage
+        expr: minio_node_disk_used_bytes / minio_node_disk_total_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk usage in MinIO"
+          description: "MinIO disk usage above 80%."
+      - alert: MinioBucketReplicationFailed
+        expr: minio_bucket_replication_failed_bytes > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MinIO bucket replication failed"
+          description: "Replication failures detected."
+
+  - name: kong
+    rules:
+      - alert: KongHighLatency
+        expr: histogram_quantile(0.99, sum(rate(kong_http_latency_bucket[5m])) by (le)) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency in Kong"
+          description: "99th percentile latency exceeds 1s."
+      - alert: KongHighErrorRate
+        expr: sum(rate(kong_http_status{code=~"5.."}[5m])) / sum(rate(kong_http_requests_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate in Kong"
+          description: "Error rate above 1%."
+
+  - name: general
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "{{ $labels.instance }} has been down for more than 5 minutes."
