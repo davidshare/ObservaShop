@@ -35,7 +35,7 @@ class Config(BaseSettings):
     KAFKA_BOOTSTRAP_SERVER: str = "kafka:9092"
 
     # Service URLs
-    AUTH_SERVICE_URL: str = "http://localhost:8010"
+    AUTH_SERVICE_URL: str = "http://localhost:8001"
 
     # Shared config
     INTERNAL_SHARED_SECRET: str

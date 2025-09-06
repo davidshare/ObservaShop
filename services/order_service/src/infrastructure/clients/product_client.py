@@ -21,7 +21,7 @@ class ProductClient:
         """
         Initialize the client with the product-service base URL.
         Args:
-            base_url: Base URL of the product-service (e.g., http://localhost:8012)
+            base_url: Base URL of the product-service (e.g., http://localhost:8003)
             timeout: Request timeout in seconds.
         """
         self.base_url = base_url.rstrip("/")
