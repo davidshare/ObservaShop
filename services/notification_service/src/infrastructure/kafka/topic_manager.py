@@ -2,7 +2,7 @@
 Manages Kafka topics - creates them automatically if they don't exist.
 Similar to how Alembic handles database migrations.
 """
-
+import time
 from typing import Dict
 from confluent_kafka.admin import AdminClient, NewTopic
 from confluent_kafka import KafkaException
@@ -96,16 +96,14 @@ class TopicManager:
             )
 
             # Wait for completion
-            success = True
             for topic, f in fs.items():
                 try:
                     f.result()  # The result itself is None
                     log.info("Topic created successfully", topic=topic)
                 except Exception as e:
                     log.error("Failed to create topic", topic=topic, error=str(e))
-                    success = False
 
-            return success
+            return self._wait_for_topics_ready(timeout=30)
 
         except KafkaException as e:
             log.critical("Kafka admin operation failed", error=str(e))
@@ -133,3 +131,62 @@ class TopicManager:
         except Exception as e:
             log.critical("Failed to verify topics", error=str(e), exc_info=True)
             return {topic: False for topic in self.required_topics}
+
+    def _wait_for_topics_ready(self, timeout: int = 30) -> bool:
+        """
+        Poll metadata until all required topics have leaders assigned and are ready.
+        This avoids the 'UNKNOWN_TOPIC_OR_PART' error due to KRaft metadata lag.
+        """
+        start_time = time.time()
+        last_log = 0
+
+        while time.time() - start_time < timeout:
+            try:
+                metadata = self.admin_client.list_topics(timeout=10)
+                ready = True
+                missing_or_unavailable = []
+
+                for topic in self.required_topics:
+                    if topic not in metadata.topics:
+                        ready = False
+                        missing_or_unavailable.append(topic)
+                        continue
+
+                    topic_metadata = metadata.topics[topic]
+                    if not topic_metadata.partitions:
+                        ready = False
+                        missing_or_unavailable.append(f"{topic} (no partitions)")
+                        continue
+
+                    # Check if any partition has leader == -1
+                    for partition in topic_metadata.partitions.values():
+                        if partition.leader == -1:
+                            ready = False
+                            missing_or_unavailable.append(
+                                f"{topic}/P{partition.id} (leader -1)"
+                            )
+                            break
+
+                if ready:
+                    log.info(
+                        "All topics are ready for consumption",
+                        topics=self.required_topics,
+                    )
+                    return True
+
+                # Avoid spamming logs
+                if time.time() - last_log > 5:
+                    log.warning(
+                        "Waiting for topics to be fully ready",
+                        missing_or_unavailable=missing_or_unavailable,
+                    )
+                    last_log = time.time()
+
+                time.sleep(2)
+
+            except Exception as e:
+                log.warning("Error checking topic readiness", error=str(e))
+                time.sleep(2)
+
+        log.error("Timeout waiting for topics to be ready", topics=self.required_topics)
+        return False

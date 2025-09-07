@@ -7,6 +7,8 @@ RUN pip install uv
 COPY shared /app/shared
 COPY services/media_service /app
 
+ENV PYTHONPATH=/app
+
 RUN uv sync
 
 EXPOSE 8000

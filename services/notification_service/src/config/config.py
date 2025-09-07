@@ -21,7 +21,7 @@ class Config(BaseSettings):
     POSTGRES_DB: str
 
     # Kafka Configuration
-    KAFKA_BOOTSTRAP_SERVER: str = "localhost:9092"
+    KAFKA_BOOTSTRAP_SERVER: str = "kafka:9092"
     KAFKA_CONSUMER_GROUP_ID: str = "notification-service-group"
 
     # External Notification Services

@@ -47,6 +47,7 @@ services:
     image: confluentinc/cp-kafka:7.7.0
     hostname: kafka
     container_name: kafka
+    stop_grace_period: 30s
     ports:
       - "9092:9092"
     environment:
@@ -55,7 +56,7 @@ services:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
       KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -68,6 +69,18 @@ services:
       - kafka-data:/var/lib/kafka/data
     networks:
       - observashop-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/kafka/9092' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
   postgres-auth:
     image: postgres:latest
     environment:
