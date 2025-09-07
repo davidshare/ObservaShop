@@ -87,10 +87,17 @@ services:
       - POSTGRES_USER=${POSTGRES_AUTH_USER}
       - POSTGRES_PASSWORD=${POSTGRES_AUTH_PASSWORD}
       - POSTGRES_DB=auth
+      - POSTGRES_MONITOR_USER=${POSTGRES_MONITOR_USER}
+      - POSTGRES_MONITOR_PASSWORD=${POSTGRES_MONITOR_PASSWORD}
     env_file: .env
+    command: >
+      postgres
+      -c custom.postgres_monitor_user=${POSTGRES_MONITOR_USER}
+      -c custom.postgres_monitor_password=${POSTGRES_MONITOR_PASSWORD}
     volumes:
       - postgres-auth-data:/var/lib/postgresql/data
       - ./databases/auth/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./databases/monitoring/init-monitoring-user.sql:/docker-entrypoint-initdb.d/20-init-monitoring-user.sql
     ports:
       - "5433:5432"
     networks:
@@ -101,10 +108,17 @@ services:
       - POSTGRES_USER=${POSTGRES_AUTHZ_USER}
       - POSTGRES_PASSWORD=${POSTGRES_AUTHZ_PASSWORD}
       - POSTGRES_DB=authz
+      - POSTGRES_MONITOR_USER=${POSTGRES_MONITOR_USER}
+      - POSTGRES_MONITOR_PASSWORD=${POSTGRES_MONITOR_PASSWORD}
     env_file: .env
+    command: >
+      postgres
+      -c custom.postgres_monitor_user=${POSTGRES_MONITOR_USER}
+      -c custom.postgres_monitor_password=${POSTGRES_MONITOR_PASSWORD}
     volumes:
       - postgres-authz-data:/var/lib/postgresql/data
       - ./databases/authz/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./databases/monitoring/init-monitoring-user.sql:/docker-entrypoint-initdb.d/20-init-monitoring-user.sql
     ports:
       - "5434:5432"
     networks:
@@ -115,10 +129,17 @@ services:
       - POSTGRES_USER=${POSTGRES_PRODUCT_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PRODUCT_PASSWORD}
       - POSTGRES_DB=product
+      - POSTGRES_MONITOR_USER=${POSTGRES_MONITOR_USER}
+      - POSTGRES_MONITOR_PASSWORD=${POSTGRES_MONITOR_PASSWORD}
     env_file: .env
+    command: >
+      postgres
+      -c custom.postgres_monitor_user=${POSTGRES_MONITOR_USER}
+      -c custom.postgres_monitor_password=${POSTGRES_MONITOR_PASSWORD}
     volumes:
       - postgres-product-data:/var/lib/postgresql/data
       - ./databases/product/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./databases/monitoring/init-monitoring-user.sql:/docker-entrypoint-initdb.d/20-init-monitoring-user.sql
     ports:
       - "5435:5432"
     networks:
@@ -129,10 +150,17 @@ services:
       - POSTGRES_USER=${POSTGRES_ORDER_USER}
       - POSTGRES_PASSWORD=${POSTGRES_ORDER_PASSWORD}
       - POSTGRES_DB=orders
+      - POSTGRES_MONITOR_USER=${POSTGRES_MONITOR_USER}
+      - POSTGRES_MONITOR_PASSWORD=${POSTGRES_MONITOR_PASSWORD}
     env_file: .env
+    command: >
+      postgres
+      -c custom.postgres_monitor_user=${POSTGRES_MONITOR_USER}
+      -c custom.postgres_monitor_password=${POSTGRES_MONITOR_PASSWORD}
     volumes:
       - postgres-order-data:/var/lib/postgresql/data
       - ./databases/order/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./databases/monitoring/init-monitoring-user.sql:/docker-entrypoint-initdb.d/20-init-monitoring-user.sql
     ports:
       - "5436:5432"
     networks:
@@ -143,10 +171,17 @@ services:
       - POSTGRES_USER=${POSTGRES_PAYMENT_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PAYMENT_PASSWORD}
       - POSTGRES_DB=payment
+      - POSTGRES_MONITOR_USER=${POSTGRES_MONITOR_USER}
+      - POSTGRES_MONITOR_PASSWORD=${POSTGRES_MONITOR_PASSWORD}
     env_file: .env
+    command: >
+      postgres
+      -c custom.postgres_monitor_user=${POSTGRES_MONITOR_USER}
+      -c custom.postgres_monitor_password=${POSTGRES_MONITOR_PASSWORD}
     volumes:
       - postgres-payment-data:/var/lib/postgresql/data
       - ./databases/payment/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./databases/monitoring/init-monitoring-user.sql:/docker-entrypoint-initdb.d/20-init-monitoring-user.sql
     ports:
       - "5437:5432"
     networks:
@@ -157,10 +192,17 @@ services:
       - POSTGRES_USER=${POSTGRES_NOTIFICATION_USER}
       - POSTGRES_PASSWORD=${POSTGRES_NOTIFICATION_PASSWORD}
       - POSTGRES_DB=notification
+      - POSTGRES_MONITOR_USER=${POSTGRES_MONITOR_USER}
+      - POSTGRES_MONITOR_PASSWORD=${POSTGRES_MONITOR_PASSWORD}
     env_file: .env
+    command: >
+      postgres
+      -c custom.postgres_monitor_user=${POSTGRES_MONITOR_USER}
+      -c custom.postgres_monitor_password=${POSTGRES_MONITOR_PASSWORD}
     volumes:
       - postgres-notification-data:/var/lib/postgresql/data
       - ./databases/notification/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./databases/monitoring/init-monitoring-user.sql:/docker-entrypoint-initdb.d/20-init-monitoring-user.sql
     ports:
       - "5438:5432"
     networks:
@@ -171,10 +213,17 @@ services:
       - POSTGRES_USER=${POSTGRES_MEDIA_USER}
       - POSTGRES_PASSWORD=${POSTGRES_MEDIA_PASSWORD}
       - POSTGRES_DB=media
+      - POSTGRES_MONITOR_USER=${POSTGRES_MONITOR_USER}
+      - POSTGRES_MONITOR_PASSWORD=${POSTGRES_MONITOR_PASSWORD}
     env_file: .env
+    command: >
+      postgres
+      -c custom.postgres_monitor_user=${POSTGRES_MONITOR_USER}
+      -c custom.postgres_monitor_password=${POSTGRES_MONITOR_PASSWORD}
     volumes:
       - postgres-media-data:/var/lib/postgresql/data
       - ./databases/media/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./databases/monitoring/init-monitoring-user.sql:/docker-entrypoint-initdb.d/20-init-monitoring-user.sql
     ports:
       - "5439:5432"
     networks:
@@ -185,10 +234,17 @@ services:
       - POSTGRES_USER=${POSTGRES_ANALYTICS_USER}
       - POSTGRES_PASSWORD=${POSTGRES_ANALYTICS_PASSWORD}
       - POSTGRES_DB=analytics
+      - POSTGRES_MONITOR_USER=${POSTGRES_MONITOR_USER}
+      - POSTGRES_MONITOR_PASSWORD=${POSTGRES_MONITOR_PASSWORD}
     env_file: .env
+    command: >
+      postgres
+      -c custom.postgres_monitor_user=${POSTGRES_MONITOR_USER}
+      -c custom.postgres_monitor_password=${POSTGRES_MONITOR_PASSWORD}
     volumes:
       - postgres-analytics-data:/var/lib/postgresql/data
       - ./databases/analytics/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./databases/monitoring/init-monitoring-user.sql:/docker-entrypoint-initdb.d/20-init-monitoring-user.sql
     ports:
       - "5430:5432"
     networks:
