@@ -23,4 +23,5 @@ members = [
     "services/order_service",
     "services/payment_service",
     "services/product_service",
+    "shared",
 ]

@@ -80,7 +80,7 @@ services:
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:latest
     environment:
-      - DATA_SOURCE_URI=postgres-auth:5432,postgres-product:5432,postgres-order:5432,postgres-payment:5432,postgres-notification:5432,postgres-media:5432,postgres-analytics:5432,postgres-authz:5432?sslmode=disable
+      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
       - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
     ports:

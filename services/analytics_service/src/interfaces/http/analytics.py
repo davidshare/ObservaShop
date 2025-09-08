@@ -19,10 +19,16 @@ from src.interfaces.http.schemas import (
     SalesSummaryResponse,
     SystemHealthResponse,
 )
+from shared.libs.observability.metrics import create_metrics_endpoint
 
 
 # Create router
 router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"])
+
+metrics_endpoint = create_metrics_endpoint()
+router.add_api_route(
+    "/metrics", metrics_endpoint, name="metrics", include_in_schema=False
+)
 
 
 def get_analytics_service(session: Session = Depends(get_session)) -> AnalyticsService:
