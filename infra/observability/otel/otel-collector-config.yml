@@ -10,30 +10,32 @@ processors:
   batch:
 
 exporters:
-  logging:
-    loglevel: debug
+  debug:
+    verbosity: detailed
   prometheus:
     endpoint: "0.0.0.0:8889"
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
-  tempo:
-    endpoint: tempo:4317
-    protocol: grpc
+    namespace: "otelcol"
+  otlp/tempo:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
 
 service:
+  telemetry:
+    metrics:
+      level: basic
+    logs:
+      level: info
   pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo]
     metrics:
       receivers: [otlp]
       processors: [batch]
       exporters: [prometheus]
-    logs:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [loki]
-    traces:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [tempo]
-  telemetry:
-    metrics:
-      address: "0.0.0.0:8888"
+    # logs:
+    #   receivers: [otlp]
+    #   processors: [batch]
+    #   exporters: [otlphttp/loki]
