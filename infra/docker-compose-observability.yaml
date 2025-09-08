@@ -77,14 +77,84 @@ services:
       - "9100:9100"
     networks:
       - observashop-network
-  postgres-exporter:
+  postgres-exporter-auth:
     image: prometheuscommunity/postgres-exporter:latest
     environment:
-      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI}
+      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_AUTH}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
       - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
     ports:
-      - "9187:9187"
+      - "9110:9187"
+    networks:
+      - observashop-network
+  postgres-exporter-authz:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_AUTHZ}
+      - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
+      - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
+    ports:
+      - "9111:9187"
+    networks:
+      - observashop-network
+  postgres-exporter-product:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_PRODUCT}
+      - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
+      - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
+    ports:
+      - "9112:9187"
+    networks:
+      - observashop-network
+  postgres-exporter-order:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_ORDER}
+      - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
+      - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
+    ports:
+      - "9113:9187"
+    networks:
+      - observashop-network
+  postgres-exporter-payment:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_PAYMENT}
+      - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
+      - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
+    ports:
+      - "9114:9187"
+    networks:
+      - observashop-network
+  postgres-exporter-media:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_MEDIA}
+      - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
+      - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
+    ports:
+      - "9115:9187"
+    networks:
+      - observashop-network
+  postgres-exporter-notification:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_NOTIFICATION}
+      - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
+      - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
+    ports:
+      - "9116:9187"
+    networks:
+      - observashop-network
+  postgres-exporter-analytics:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_ANALYTICS}
+      - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
+      - DATA_SOURCE_PASS=${POSTGRES_MONITOR_PASSWORD}
+    ports:
+      - "9117:9187"
     networks:
       - observashop-network
   redis-exporter:
@@ -123,4 +193,5 @@ volumes:
   tempo-data:
 networks:
   observashop-network:
-    driver: bridge
+    external: true
+    name: observashop_observashop-network

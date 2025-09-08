@@ -20,6 +20,64 @@ scrape_configs:
     metrics_path: /metrics
     scrape_interval: 10s
 
+  # --- POSTGRES EXPORTERS ---
+  - job_name: "postgres-exporter-auth"
+    static_configs:
+      - targets: ["postgres-exporter-auth:9187"]
+        labels:
+          group: "databases"
+          db: "auth"
+    metrics_path: /metrics
+  - job_name: "postgres-exporter-product"
+    static_configs:
+      - targets: ["postgres-exporter-product:9187"]
+        labels:
+          group: "databases"
+          db: "product"
+    metrics_path: /metrics
+  - job_name: "postgres-exporter-order"
+    static_configs:
+      - targets: ["postgres-exporter-order:9187"]
+        labels:
+          group: "databases"
+          db: "orders"
+    metrics_path: /metrics
+  - job_name: "postgres-exporter-payment"
+    static_configs:
+      - targets: ["postgres-exporter-payment:9187"]
+        labels:
+          group: "databases"
+          db: "payment"
+    metrics_path: /metrics
+  - job_name: "postgres-exporter-notification"
+    static_configs:
+      - targets: ["postgres-exporter-notification:9187"]
+        labels:
+          group: "databases"
+          db: "notification"
+    metrics_path: /metrics
+  - job_name: "postgres-exporter-media"
+    static_configs:
+      - targets: ["postgres-exporter-media:9187"]
+        labels:
+          group: "databases"
+          db: "media"
+    metrics_path: /metrics
+  - job_name: "postgres-exporter-analytics"
+    static_configs:
+      - targets: ["postgres-exporter-analytics:9187"]
+        labels:
+          group: "databases"
+          db: "analytics"
+    metrics_path: /metrics
+  - job_name: "postgres-exporter-authz"
+    static_configs:
+      - targets: ["postgres-exporter-authz:9187"]
+        labels:
+          group: "databases"
+          db: "authz"
+    metrics_path: /metrics
+
   # --- OBSERVABILITY TOOLS ---
   - job_name: "prometheus"
     static_configs:
@@ -60,13 +118,6 @@ scrape_configs:
         labels:
           group: "infrastructure"
     scrape_interval: 10s
-
-  # --- DATABASE MONITORING ---
-  - job_name: "postgres-exporter"
-    static_configs:
-      - targets: ["postgres-exporter:9187"]
-        labels:
-          group: "databases"
 
   - job_name: "redis-exporter"
     static_configs:

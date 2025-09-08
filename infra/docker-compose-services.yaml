@@ -164,4 +164,5 @@ services:
       - observashop-network
 networks:
   observashop-network:
-    driver: bridge
+    external: true
+    name: observashop_observashop-network
