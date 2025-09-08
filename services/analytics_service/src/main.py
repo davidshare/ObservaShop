@@ -5,6 +5,7 @@ from src.infrastructure.database.session import init_sqlmodel
 from src.infrastructure.services import redis_service
 from src.interfaces.http.analytics import router as analytics_router
 from shared.libs.observability.middleware import metrics_middleware
+from shared.libs.observability.metrics import create_metrics_endpoint
 
 
 @asynccontextmanager
@@ -61,3 +62,5 @@ async def health_check():
 
 app.middleware("http")(metrics_middleware)
 app.include_router(analytics_router)
+metrics_endpoint = create_metrics_endpoint()
+app.add_api_route("/metrics", metrics_endpoint, name="metrics", include_in_schema=False)
