@@ -1,15 +1,18 @@
 FROM python:3.10-slim
 
-WORKDIR /app
+WORKDIR /app/service
+
+COPY uv.lock /app/service/uv.lock
 
 RUN pip install uv
 
 COPY shared /app/shared
-COPY services/order_service /app
+COPY services/order_service /app/service
 
-ENV PYTHONPATH=/app
-RUN uv sync
+ENV PYTHONPATH="/app:/app/service"
+
+RUN uv sync --frozen
 
 EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "python", "/app/service/src/start.py"]

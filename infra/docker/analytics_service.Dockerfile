@@ -15,5 +15,4 @@ RUN uv sync --frozen
 
 EXPOSE 8000
 
-# Run the service
 CMD ["uv", "run", "python", "/app/service/src/start.py"]

@@ -4,6 +4,8 @@ from src.config.logger_config import log
 from src.infrastructure.database.session import init_sqlmodel
 from src.infrastructure.services import redis_service
 from src.interfaces.http.order import router as order_router
+from shared.libs.observability.middleware import metrics_middleware
+from shared.libs.observability.metrics import create_metrics_endpoint
 
 
 @asynccontextmanager
@@ -49,7 +51,7 @@ def read_root():
 async def health_check():
     """Health check endpoint for liveness probe."""
     db_healthy = True  # Assume engine initialized
-    redis_healthy = await redis_service.ping() 
+    redis_healthy = await redis_service.ping()
 
     return {
         "status": "healthy" if db_healthy and redis_healthy else "unhealthy",
@@ -58,4 +60,7 @@ async def health_check():
     }
 
 
+app.middleware("http")(metrics_middleware)
 app.include_router(order_router)
+metrics_endpoint = create_metrics_endpoint()
+app.add_api_route("/metrics", metrics_endpoint, name="metrics", include_in_schema=False)

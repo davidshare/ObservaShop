@@ -1,15 +1,17 @@
 FROM python:3.10-slim
 
-WORKDIR /app
+WORKDIR /app/service
+
+COPY uv.lock /app/service/uv.lock
 
 RUN pip install uv
 
 COPY shared /app/shared
-COPY services/authz_service /app
+COPY services/authz_service /app/service
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH="/app:/app/service"
 
-RUN uv sync
+RUN uv sync --frozen
 
 EXPOSE 8000
 

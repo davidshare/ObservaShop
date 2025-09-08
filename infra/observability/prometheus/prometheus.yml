@@ -7,14 +7,14 @@ scrape_configs:
   - job_name: "fastapi-services"
     static_configs:
       - targets:
-          - "auth-service:8000"
-          - "authz-service:8000"
-          - "product-service:8000"
-          - "order-service:8000"
-          - "payment-service:8000"
-          - "notification-service:8000"
-          - "media-service:8000"
-          - "analytics-service:8000"
+          - "auth-service:8010"
+          - "authz-service:8011"
+          - "product-service:8012"
+          - "order-service:8013"
+          - "payment-service:8014"
+          - "media-service:8015"
+          - "notification-service:8016"
+          - "analytics-service:8017"
         labels:
           group: "services"
     metrics_path: /metrics

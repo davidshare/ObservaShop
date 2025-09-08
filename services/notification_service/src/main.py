@@ -19,6 +19,8 @@ from src.infrastructure.kafka.kafka_config import KafkaConfig
 from src.infrastructure.kafka.topic_manager import TopicManager
 from src.infrastructure.services import redis_service
 from src.interfaces.http.notification import router as notification_router
+from shared.libs.observability.middleware import metrics_middleware
+from shared.libs.observability.metrics import create_metrics_endpoint
 
 # Shared service instances for dependency injection
 engine = create_engine(config.DATABASE_URL)
@@ -130,4 +132,7 @@ async def health_check():
     }
 
 
+app.middleware("http")(metrics_middleware)
 app.include_router(notification_router)
+metrics_endpoint = create_metrics_endpoint()
+app.add_api_route("/metrics", metrics_endpoint, name="metrics", include_in_schema=False)
