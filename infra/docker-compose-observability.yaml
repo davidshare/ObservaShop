@@ -1,6 +1,6 @@
 services:
   prometheus:
-    image: prom/prometheus:3.5.0
+    image: prom/prometheus:v3.5.0
     command: ["--config.file=/etc/prometheus/prometheus.yml"]
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -34,7 +34,7 @@ services:
     networks:
       - observashop-network
   alert-manager:
-    image: prom/alertmanager:0.28.1
+    image: prom/alertmanager:v0.28.1
     volumes:
       - "./observability/alertmanager/alertmanager.yml:/alertmanager/alertmanager.yml"
     networks:
@@ -54,7 +54,7 @@ services:
     networks:
       - observashop-network
   otel-collector:
-    image: otel/opentelemetry-collector:0.134.0
+    image: otel/opentelemetry-collector:latest
     command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
       - ./observability/otel/otel-collector-config.yml:/etc/otel-collector-config.yml
@@ -65,7 +65,7 @@ services:
     networks:
       - observashop-network
   node-exporter:
-    image: prom/node-exporter:1.9.1
+    image: prom/node-exporter:v1.9.1
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -78,7 +78,7 @@ services:
     networks:
       - observashop-network
   postgres-exporter-auth:
-    image: prometheuscommunity/postgres-exporter:0.17.1
+    image: prometheuscommunity/postgres-exporter:v0.17.1
     environment:
       - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_AUTH}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
@@ -88,7 +88,7 @@ services:
     networks:
       - observashop-network
   postgres-exporter-authz:
-    image: prometheuscommunity/postgres-exporter:0.17.1
+    image: prometheuscommunity/postgres-exporter:v0.17.1
     environment:
       - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_AUTHZ}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
@@ -98,7 +98,7 @@ services:
     networks:
       - observashop-network
   postgres-exporter-product:
-    image: prometheuscommunity/postgres-exporter:0.17.1
+    image: prometheuscommunity/postgres-exporter:v0.17.1
     environment:
       - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_PRODUCT}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
@@ -108,7 +108,7 @@ services:
     networks:
       - observashop-network
   postgres-exporter-order:
-    image: prometheuscommunity/postgres-exporter:0.17.1
+    image: prometheuscommunity/postgres-exporter:v0.17.1
     environment:
       - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_ORDER}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
@@ -118,7 +118,7 @@ services:
     networks:
       - observashop-network
   postgres-exporter-payment:
-    image: prometheuscommunity/postgres-exporter:0.17.1
+    image: prometheuscommunity/postgres-exporter:v0.17.1
     environment:
       - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_PAYMENT}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
@@ -128,7 +128,7 @@ services:
     networks:
       - observashop-network
   postgres-exporter-media:
-    image: prometheuscommunity/postgres-exporter:0.17.1
+    image: prometheuscommunity/postgres-exporter:v0.17.1
     environment:
       - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_MEDIA}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
@@ -138,7 +138,7 @@ services:
     networks:
       - observashop-network
   postgres-exporter-notification:
-    image: prometheuscommunity/postgres-exporter:0.17.1
+    image: prometheuscommunity/postgres-exporter:v0.17.1
     environment:
       - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_NOTIFICATION}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
@@ -148,7 +148,7 @@ services:
     networks:
       - observashop-network
   postgres-exporter-analytics:
-    image: prometheuscommunity/postgres-exporter:0.17.1
+    image: prometheuscommunity/postgres-exporter:v0.17.1
     environment:
       - DATA_SOURCE_URI=${POSTGRES_DATA_SOURCE_URI_ANALYTICS}
       - DATA_SOURCE_USER=${POSTGRES_MONITOR_USER}
@@ -158,7 +158,7 @@ services:
     networks:
       - observashop-network
   redis-exporter:
-    image: oliver006/redis_exporter:1.76.0
+    image: oliver006/redis_exporter:v1.76.0
     environment:
       - REDIS_ADDR=redis:6379
       # Optional: If your Redis requires authentication
@@ -168,7 +168,7 @@ services:
     networks:
       - observashop-network
   kafka-exporter:
-    image: danielqsj/kafka-exporter:1.9.0
+    image: danielqsj/kafka-exporter:v1.9.0
     environment:
       - KAFKA_BROKERS=kafka:9092
     ports:
@@ -176,7 +176,7 @@ services:
     networks:
       - observashop-network
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:0.49.1
+    image: gcr.io/cadvisor/cadvisor:v0.52.0
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
