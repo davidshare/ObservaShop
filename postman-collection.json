@@ -1,0 +1,1339 @@
+{
+  "info": {
+    "name": "Observashop api collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"kosa@example.com\",\n    \"password\": \"Gemshare,php1989@\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8010/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8010",
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkODM1ZGRhZi0zOTViLTQzMGMtODg1Ny1iZGYyYzQyZDVjNWIiLCJleHAiOjE3NTQwMDY4MjF9.5B2mYJigCinf0JC19JVrW3uKsnqLeFEi9ouWVzhhWAM",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8010/auth/users/d835ddaf-395b-430c-8857-bdf2c42d5c5b",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8010",
+              "path": ["auth", "users", "d835ddaf-395b-430c-8857-bdf2c42d5c5b"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDU3MTg0NH0.3o7g-NRFuk7Zom5aF8GIIyk73JKfvBFQGqul3EVGbzM",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"first_name\": \"Jane\",\n    \"last_name\": \"Doe\",\n    \"phone_number\": \"+1234567890\",\n    \"address\": \"123 Main St, City, Country\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8010/auth/users/d835ddaf-395b-430c-8857-bdf2c42d5c5b",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8010",
+              "path": ["auth", "users", "d835ddaf-395b-430c-8857-bdf2c42d5c5b"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJleHAiOjE3NTQzMDAyMzl9.hROfqYyvQtvHc5Wk1XcWiPEL7uay7Y_oo_FxVCtVans",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"cremator\",\n    \"description\": \"Can edit products and orders\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8011/authz/roles",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": ["authz", "roles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDU2MjE3MX0.wI5_MOne6u_Y8YRWnhyESjl9kbYa-J7_QsLMXQ8wDDE",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/roles",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": ["authz", "roles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJleHAiOjE3NTQyOTY4NDN9.mDrFAGNqZUu5STVfD6bxpU_F7nwPxRKaxAxeNHP0jZ0",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/roles/915a4978-c456-4391-8850-fad5283d47c9",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": ["authz", "roles", "915a4978-c456-4391-8850-fad5283d47c9"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJleHAiOjE3NTQyOTY4NDN9.mDrFAGNqZUu5STVfD6bxpU_F7nwPxRKaxAxeNHP0jZ0",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"product-owner\",\n    \"description\": \"Can edit products and orders\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8011/authz/roles/0d786dbb-602f-44e3-ae4d-2b838590c4f0",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": ["authz", "roles", "0d786dbb-602f-44e3-ae4d-2b838590c4f0"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJleHAiOjE3NTQyOTY4NDN9.mDrFAGNqZUu5STVfD6bxpU_F7nwPxRKaxAxeNHP0jZ0",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/roles/0d786dbb-602f-44e3-ae4d-2b838590c4f0",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": ["authz", "roles", "0d786dbb-602f-44e3-ae4d-2b838590c4f0"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Role to User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDM5OTY5Nn0.sX7vf7WRrkVIV_JGjSevRgY1Nw8hoybxAw0COoO8jn8",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": \"ad3591fc-1461-4c13-9c11-f2329bc5d18a\",\n    \"role_id\": \"98ada0d1-b3f8-4abf-9e5b-531e644417f6\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8011/authz/user-roles",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": ["authz", "user-roles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Role from User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDQwODM3N30.iu79R8wB-Pce8pVkh2vxVrG9AwGrXarCOvnIcaU0fiU",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/user-roles/ad3591fc-1461-4c13-9c11-f2329bc5d18a/98ada0d1-b3f8-4abf-9e5b-531e644417f6",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": [
+                "authz",
+                "user-roles",
+                "ad3591fc-1461-4c13-9c11-f2329bc5d18a",
+                "98ada0d1-b3f8-4abf-9e5b-531e644417f6"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "item": [
+        {
+          "name": "Create Permission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDUwMTMyOH0.6ZEbJYq2yCQCVTNrVULwJ67vQz_G4VFzIDwQBWsOXcE",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"permission:create\",\n    \"description\": \"Enables users to create permissions\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8011/authz/permissions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": ["authz", "permissions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDU2MjE3MX0.wI5_MOne6u_Y8YRWnhyESjl9kbYa-J7_QsLMXQ8wDDE",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/permissions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": ["authz", "permissions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Permission",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDUwMTMyOH0.6ZEbJYq2yCQCVTNrVULwJ67vQz_G4VFzIDwQBWsOXcE",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/permissions/51d4dc6d-0c03-4772-be02-4f2cba1b709d",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": [
+                "authz",
+                "permissions",
+                "51d4dc6d-0c03-4772-be02-4f2cba1b709d"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Permission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDUwMTMyOH0.6ZEbJYq2yCQCVTNrVULwJ67vQz_G4VFzIDwQBWsOXcE",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"permission:read\",\n    \"description\": \"Enables users to read a single permission\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8011/authz/permissions/51d4dc6d-0c03-4772-be02-4f2cba1b709d",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": [
+                "authz",
+                "permissions",
+                "51d4dc6d-0c03-4772-be02-4f2cba1b709d"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Permission",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDUwNjg1NX0.c8V-2feRZqF9fF9yN1MECNrpAAOi1GHIIN6aygpKicE",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/permissions/a44adeab-8e63-4c47-9c96-e0ad13fc220c",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": [
+                "authz",
+                "permissions",
+                "a44adeab-8e63-4c47-9c96-e0ad13fc220c"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDU0Njk4Nn0.hr2qCC4iEGG9ik1keEkjiknfDNkjRVpFnjtGNstENAU",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/user-roles/99ae59a4-0f7d-4933-b977-5cffa4344316",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": [
+                "authz",
+                "user-roles",
+                "99ae59a4-0f7d-4933-b977-5cffa4344316"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Permission to Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDU3MTg0NH0.3o7g-NRFuk7Zom5aF8GIIyk73JKfvBFQGqul3EVGbzM",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"role_id\": \"98ada0d1-b3f8-4abf-9e5b-531e644417f6\",\n    \"permission_id\": \"fcdda987-fb65-4196-9a42-a6d82e7bb84f\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8011/authz/role-permissions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": ["authz", "role-permissions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDU3MTg0NH0.3o7g-NRFuk7Zom5aF8GIIyk73JKfvBFQGqul3EVGbzM",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/role-permissions/915a4978-c456-4391-8850-fad5283d47c9",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": [
+                "authz",
+                "role-permissions",
+                "915a4978-c456-4391-8850-fad5283d47c9"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Permission from Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDU3MTg0NH0.3o7g-NRFuk7Zom5aF8GIIyk73JKfvBFQGqul3EVGbzM",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8011/authz/role-permissions/98ada0d1-b3f8-4abf-9e5b-531e644417f6/fcdda987-fb65-4196-9a42-a6d82e7bb84f",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8011",
+              "path": [
+                "authz",
+                "role-permissions",
+                "98ada0d1-b3f8-4abf-9e5b-531e644417f6",
+                "fcdda987-fb65-4196-9a42-a6d82e7bb84f"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY1ODMxM30.yGUhpNfdLXpHLD3y-NS8mH6kPDFdazFPkfH4tzs277A",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"music\",\n    \"description\": \"category for all music products\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8012/categories",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category with Parent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY3MDc4MH0.qkZZJxjITKUohGbBp17oz1pc9Ozqv4AhxmikvNQ7RKk",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"worship\",\n    \"parent_id\": \"403eb822-51d1-4189-8927-c5c518ad9ab3\",\n    \"description\": \"category for worship items\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8012/categories",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY3MDc4MH0.qkZZJxjITKUohGbBp17oz1pc9Ozqv4AhxmikvNQ7RKk",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8012/categories",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Category",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY2MzY5NH0.xxahw5GSlkq6DcJ9NvMC3fchV5gAIKNO0dwFSurnYX8",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8012/categories/403eb822-51d1-4189-8927-c5c518ad9ab3",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["categories", "403eb822-51d1-4189-8927-c5c518ad9ab3"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY3MDc4MH0.qkZZJxjITKUohGbBp17oz1pc9Ozqv4AhxmikvNQ7RKk",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"hymns\",\n    \"description\": \"category for all hymns products and items\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8012/categories/403eb822-51d1-4189-8927-c5c518ad9ab3",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["categories", "403eb822-51d1-4189-8927-c5c518ad9ab3"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY3MDc4MH0.qkZZJxjITKUohGbBp17oz1pc9Ozqv4AhxmikvNQ7RKk",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8012/categories/403eb822-51d1-4189-8927-c5c518ad9ab3",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["categories", "403eb822-51d1-4189-8927-c5c518ad9ab3"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY3NzQ1NH0.LkZ2BIJ0Ym8u7g-P_aSPYB5SuhVeUwpDwKfafhqN4cg",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n      \"name\": \"Sing to the lord\",\n      \"description\": \"A collection of psalms\",\n      \"price\": 5000,\n      \"stock\": 10,\n      \"category_id\": \"2a7acb4f-ac4b-4c6d-9d7f-8d1dc6076efd\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8012/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NTI1ODYxOH0.KRqRz4ZqMIJq4OUtUE2DJmRkVgVzkg8EaS4QOJouT20",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8012/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY3NzQ1NH0.LkZ2BIJ0Ym8u7g-P_aSPYB5SuhVeUwpDwKfafhqN4cg",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8012/products/4d0354c2-15a9-4499-a663-40ac01a8b004",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["products", "4d0354c2-15a9-4499-a663-40ac01a8b004"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY3NzQ1NH0.LkZ2BIJ0Ym8u7g-P_aSPYB5SuhVeUwpDwKfafhqN4cg",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Amazing Grace Album\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8012/products/edd18f3b-177c-4f1f-97c6-bf35360f9c2c",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["products", "edd18f3b-177c-4f1f-97c6-bf35360f9c2c"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDY3NzQ1NH0.LkZ2BIJ0Ym8u7g-P_aSPYB5SuhVeUwpDwKfafhqN4cg",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8012/products/4d0354c2-15a9-4499-a663-40ac01a8b004",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8012",
+              "path": ["products", "4d0354c2-15a9-4499-a663-40ac01a8b004"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDc1NTM2OX0.b2AFwltvVYbC632wlz2KxiZvqgNPQUrC1sJ1aEizxtc",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"items\": [\n      {\n        \"product_id\": \"6afdd706-aa4c-48d0-bbda-f6305e09f594\",\n        \"quantity\": 1\n      }\n    ]\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8013/orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8013",
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order with Multiple Items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDgwMzQxNH0.kRt5RuTqnXzWxHCm6FrN34mJ_cg4pcNSm6gM1BhK8l4",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"items\": [\n      {\n        \"product_id\": \"6afdd706-aa4c-48d0-bbda-f6305e09f594\",\n        \"quantity\": 1\n      },\n      {\n        \"product_id\": \"edd18f3b-177c-4f1f-97c6-bf35360f9c2c\",\n        \"quantity\": 1\n      }\n    ]\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8013/orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8013",
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NTAzODExNn0.peXTjNG6Sg86cWrMo8tO9a4NaqbHja5ljbzm0KfNQKU",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8003/orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8003",
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDgwMzQxNH0.kRt5RuTqnXzWxHCm6FrN34mJ_cg4pcNSm6gM1BhK8l4",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8013/orders/1dcb50cb-5649-4617-8d7e-a94230b1a367",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8013",
+              "path": ["orders", "1dcb50cb-5649-4617-8d7e-a94230b1a367"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NTAzODExNn0.peXTjNG6Sg86cWrMo8tO9a4NaqbHja5ljbzm0KfNQKU",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"confirmed\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8003/orders/30300649-52a0-46df-b036-9b8e6259058a",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8003",
+              "path": ["orders", "30300649-52a0-46df-b036-9b8e6259058a"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDgwMzQxNH0.kRt5RuTqnXzWxHCm6FrN34mJ_cg4pcNSm6gM1BhK8l4",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8013/orders/1dcb50cb-5649-4617-8d7e-a94230b1a367",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8013",
+              "path": ["orders", "1dcb50cb-5649-4617-8d7e-a94230b1a367"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NTAxMDIzOH0.Csa_2jvf4mhHbf_-LuMWSf1OZLeCVBAF24drh74MDfc",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "9caa03c6-03c3-4d48-a3d6-9278b4f48518",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"order_id\": \"c146a1ba-cc55-40a7-9a81-f867a8dfaf38\",\n    \"amount\": 100.0,\n    \"currency\": \"USD\",\n    \"payment_method\": \"mock\"\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8004/payments",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8004",
+              "path": ["payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Payments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDk0MDc1MX0.Yha0Td16ozRFdFHkZPmSs_alE2LgxUhJtnJd76m9Vo0",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8004/payments",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8004",
+              "path": ["payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDk0MDc1MX0.Yha0Td16ozRFdFHkZPmSs_alE2LgxUhJtnJd76m9Vo0",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8004/payments/bf142761-6493-4bda-b6c9-14068e47c9e6",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8004",
+              "path": ["payments", "bf142761-6493-4bda-b6c9-14068e47c9e6"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Payment Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDk0NDU3Mn0.wfdy-BGQZK-qQOtEevMS3lQsbvWl2HLWX_bOei95QfI",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"status\": \"failed\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8004/payments/bf142761-6493-4bda-b6c9-14068e47c9e6",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8004",
+              "path": ["payments", "bf142761-6493-4bda-b6c9-14068e47c9e6"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refund Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NDk0NDU3Mn0.wfdy-BGQZK-qQOtEevMS3lQsbvWl2HLWX_bOei95QfI",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8004/payments/1a1efe3d-7fa4-48be-ab66-3e28f3d4407f/refund",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8004",
+              "path": [
+                "payments",
+                "1a1efe3d-7fa4-48be-ab66-3e28f3d4407f",
+                "refund"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Media Service",
+      "item": [
+        {
+          "name": "Create Media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NTI2NjYwNn0.3QEUW_9uE45FeE3jUqwS738nQuH162rqISJw4_Rug5k",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "src": "/home/davidshare/Downloads/518250088_4007829939493130_6320940394803334492_n.jpg",
+                  "type": "file"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8005/media/upload?owner_id=6afdd706-aa4c-48d0-bbda-f6305e09f594&owner_type=product",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8005",
+              "path": ["media", "upload"],
+              "query": [
+                {
+                  "key": "owner_id",
+                  "value": "6afdd706-aa4c-48d0-bbda-f6305e09f594"
+                },
+                {
+                  "key": "owner_type",
+                  "value": "product"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Media",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NTI3NDA0OX0.kw69Ij7IV4c9-v800qmHhQItxGDTHNZuwEeQHHfIpOM",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8005/media",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8005",
+              "path": ["media"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Media",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NTI3NDA0OX0.kw69Ij7IV4c9-v800qmHhQItxGDTHNZuwEeQHHfIpOM",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8005/media/93703136-c8e9-472c-ba23-2622aed659e8",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8005",
+              "path": ["media", "93703136-c8e9-472c-ba23-2622aed659e8"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Media",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NTI3NDA0OX0.kw69Ij7IV4c9-v800qmHhQItxGDTHNZuwEeQHHfIpOM",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"is_active\": \"false\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8005/media/93703136-c8e9-472c-ba23-2622aed659e8",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8005",
+              "path": ["media", "93703136-c8e9-472c-ba23-2622aed659e8"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Media",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5OWFlNTlhNC0wZjdkLTQ5MzMtYjk3Ny01Y2ZmYTQzNDQzMTYiLCJwZXJtaXNzaW9ucyI6W10sImlzX3N1cGVyYWRtaW4iOnRydWUsImV4cCI6MTc1NTI3NDA0OX0.kw69Ij7IV4c9-v800qmHhQItxGDTHNZuwEeQHHfIpOM",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8005/media/93703136-c8e9-472c-ba23-2622aed659e8",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8005",
+              "path": ["media", "93703136-c8e9-472c-ba23-2622aed659e8"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

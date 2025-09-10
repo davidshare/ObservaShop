@@ -42,8 +42,8 @@ class Config(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
 
     # Service URLs for inter-service communication
-    AUTH_SERVICE_URL: str = "http://auth-service:8000"
-    ORDER_SERVICE_URL: str = "http://order-service:8003"
+    AUTH_SERVICE_URL: str = "http://auth-service:8010"
+    ORDER_SERVICE_URL: str = "http://order-service:8013"
 
     # Internal shared secret for service-to-service authentication
     INTERNAL_SHARED_SECRET: str

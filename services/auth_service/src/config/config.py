@@ -33,7 +33,7 @@ class Config(BaseSettings):
 
     # External Service ENVs
     INTERNAL_SHARED_SECRET: str
-    AUTHZ_SERVICE_URL: str
+    AUTHZ_SERVICE_URL: str = "http://localhost:8011"
 
     @property
     def DATABASE_URL(self) -> str:

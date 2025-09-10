@@ -27,7 +27,9 @@ REQUEST_DURATION = Histogram(
     buckets=[0.01, 0.05, 0.1, 0.5, 1.0, 2.5, 5.0, 10.0],
 )
 
-ACTIVE_REQUESTS = Gauge("http_active_requests", "Current active HTTP requests", [])
+ACTIVE_REQUESTS = Gauge(
+    "http_active_requests", "Current active HTTP requests", ["method", "endpoint"]
+)
 
 # === BUSINESS METRICS ===
 EVENTS_PROCESSED = Counter(
@@ -46,6 +48,13 @@ SERVICE_HEALTH = Gauge(
 )
 
 DATABASE_CONNECTIONS = Gauge("database_connections", "Current database connections", [])
+
+# === ERROR METRICS ===
+EXCEPTION_COUNT = Counter(
+    "http_exceptions_total",
+    "Total number of exceptions raised by the service",
+    ["exception_type", "method", "endpoint"],
+)
 
 
 def create_metrics_endpoint():

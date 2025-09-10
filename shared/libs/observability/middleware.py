@@ -13,6 +13,7 @@ from shared.libs.observability.metrics import (
     ACTIVE_REQUESTS,
     REQUEST_COUNT,
     REQUEST_DURATION,
+    EXCEPTION_COUNT,
 )
 
 
@@ -26,6 +27,7 @@ async def metrics_middleware(
     - Request count
     - Request duration
     - Active requests
+    - Exceptions (by type)
     """
     method = request.method
 
@@ -34,20 +36,26 @@ async def metrics_middleware(
     if re.search(r"/[a-f0-9-]{36}", path):
         path = re.sub(r"/[a-f0-9-]{36}", "/{id}", path)
 
-    ACTIVE_REQUESTS.inc()
+    ACTIVE_REQUESTS.labels(method=method, endpoint=path).inc()
     start_time = time.time()
+    exception_type = None
 
     try:
         response = await call_next(request)
         status_code = response.status_code
     except Exception as e:
+        # Capture the exception type
+        exception_type = type(e).__name__
+        EXCEPTION_COUNT.labels(
+            exception_type=exception_type, method=method, endpoint=path
+        ).inc()
         status_code = 500
         raise
     finally:
         duration = time.time() - start_time
-        ACTIVE_REQUESTS.dec()
+        ACTIVE_REQUESTS.labels(method=method, endpoint=path).dec()
 
-        # Record metrics
+        # Always record request metrics
         REQUEST_COUNT.labels(
             method=method, endpoint=path, status=str(status_code)
         ).inc()

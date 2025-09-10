@@ -1,0 +1,35 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: debug
+
+positions:
+  filename: /positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: observashop-services
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/observashop-.*-service-1"
+        action: keep
+      - source_labels: ["__meta_docker_service_name"]
+        target_label: "job"
+        replacement: "$1"
+      - source_labels: ["__meta_docker_container_name"]
+        target_label: "container"
+      - source_labels: ["__meta_docker_container_log_stream"]
+        target_label: "stream"
+      - source_labels: ["__meta_docker_container_id"]
+        target_label: "container_id"
+      - source_labels: []
+        target_label: "app"
+        replacement: "observashop"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/observashop-(.*)-service-1"
+        target_label: "service"
+        replacement: "$1"
