@@ -57,7 +57,7 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "${DS_PROMETHEUS}",
+        "uid": "PBFA97CFB590B2093",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -89,7 +89,7 @@
   "panels": [
     {
       "collapsed": true,
-      "datasource": "${DS_PROMETHEUS}",
+      "uid": "PBFA97CFB590B2093",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -103,7 +103,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -218,7 +218,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -337,7 +337,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -457,7 +457,7 @@
     },
     {
       "collapsed": true,
-      "datasource": "${DS_PROMETHEUS}",
+      "uid": "PBFA97CFB590B2093",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -471,7 +471,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -593,7 +593,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -715,7 +715,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -837,7 +837,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -959,7 +959,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -1081,7 +1081,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -1203,7 +1203,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -1327,7 +1327,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -1451,7 +1451,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -1576,7 +1576,7 @@
     },
     {
       "collapsed": true,
-      "datasource": "${DS_PROMETHEUS}",
+      "uid": "PBFA97CFB590B2093",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1590,7 +1590,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -1701,7 +1701,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -1816,7 +1816,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -1921,7 +1921,7 @@
     },
     {
       "collapsed": true,
-      "datasource": "${DS_PROMETHEUS}",
+      "uid": "PBFA97CFB590B2093",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1931,7 +1931,7 @@
       "id": 28,
       "panels": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2060,7 +2060,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2166,7 +2166,7 @@
     },
     {
       "collapsed": true,
-      "datasource": "${DS_PROMETHEUS}",
+      "uid": "PBFA97CFB590B2093",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -2188,7 +2188,7 @@
             "mode": "spectrum"
           },
           "dataFormat": "tsbuckets",
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {},
             "overrides": []
@@ -2252,7 +2252,7 @@
         },
         {
           "columns": [],
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2494,7 +2494,7 @@
     },
     {
       "collapsed": true,
-      "datasource": "${DS_PROMETHEUS}",
+      "uid": "PBFA97CFB590B2093",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -2508,7 +2508,7 @@
           "bars": false,
           "dashLength": 10,
           "dashes": false,
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {
               "links": [],
@@ -2616,7 +2616,7 @@
           "colorBackground": false,
           "colorValue": false,
           "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {},
             "overrides": []
@@ -2699,7 +2699,7 @@
           "colorBackground": false,
           "colorValue": false,
           "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {},
             "overrides": []
@@ -2780,7 +2780,7 @@
           "colorBackground": false,
           "colorValue": false,
           "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
-          "datasource": "${DS_PROMETHEUS}",
+          "uid": "PBFA97CFB590B2093",
           "fieldConfig": {
             "defaults": {},
             "overrides": []
@@ -2870,7 +2870,7 @@
       {
         "allValue": ".*",
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "uid": "PBFA97CFB590B2093",
         "definition": "label_values(kong_http_requests_total,service)",
         "description": null,
         "error": null,
@@ -2895,7 +2895,7 @@
       {
         "allValue": ".*",
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "uid": "PBFA97CFB590B2093",
         "definition": "label_values(kong_nginx_connections_total,instance)",
         "description": null,
         "error": null,
@@ -2920,7 +2920,7 @@
       {
         "allValue": ".*",
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "uid": "PBFA97CFB590B2093",
         "definition": "label_values(kong_http_requests_total,route)",
         "description": "Ingress",
         "error": null,
@@ -2945,7 +2945,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "uid": "PBFA97CFB590B2093",
         "definition": "label_values(kong_upstream_target_health, upstream)",
         "hide": 0,
         "includeAll": true,
